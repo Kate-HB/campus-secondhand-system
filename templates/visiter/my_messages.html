@@ -108,7 +108,7 @@
     </div>
     <div style="margin-left:auto;display:flex;align-items:center;gap:12px;padding-right:15px;">
       <a href="/my" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:#000;">
-        <img src="{{ user.avatar or '/static/avatars/default.jpg' }}" class="mini-avatar">
+        <img src="{{ user.avatar or '/static/avatars/userspictures/default.jpg' }}" class="mini-avatar">
         <span style="font-weight:bold;font-size:16px;">{{ user.nickname }}</span>
       </a>
     </div>
@@ -123,7 +123,7 @@
           <a href="javascript:history.back()" class="back-btn">←</a>
 
           <!-- 对方头像和信息 -->
-          <img src="{{ (opponent.avatar if opponent else to_user.avatar) or '/static/avatars/default.jpg' }}" class="chat-avatar">
+          <img src="{{ (opponent.avatar if opponent else to_user.avatar) or '/static/avatars/userspictures/default.jpg' }}" class="chat-avatar">
           <div>
             <div style="font-weight:bold;font-size:18px;">
               {{ (opponent.nickname if opponent else to_user.nickname) }}
@@ -203,7 +203,7 @@
             `;
           } else {
             bubble.innerHTML = `
-              <img src="${msg.from_avatar || '/static/avatars/default.jpg'}" class="mini-avatar">
+              <img src="${msg.from_avatar || '/static/avatars/userspictures/default.jpg'}" class="mini-avatar">
               <div style="max-width:70%;background:#f0f0f0;padding:12px 16px;border-radius:18px 18px 18px 4px;word-break:break-all;">
                 <div style="font-weight:bold;font-size:14px;margin-bottom:4px;color:#667eea;">${msg.from_nickname}</div>
                 ${msg.content.replace(/\n/g, '<br>')}
@@ -274,7 +274,7 @@
   if (conv.opponent_id === 0) {
     div.innerHTML = `
       ${conv.unread_count > 0 ? '<div class="unread-dot"></div>' : ''}
-      <img src="/static/avatars/system.jpg" class="msg-avatar">
+      <img src="/static/avatars/userspictures/system.png" class="msg-avatar">
       <div class="msg-content">
         <div class="msg-title" style="color:#f39c12; font-weight:bold; font-size:18px;">
           🔔 ${conv.opponent_nick || '系统通知'}
@@ -293,7 +293,7 @@
     // 普通聊天消息
     div.innerHTML = `
       ${conv.unread_count > 0 ? '<div class="unread-dot"></div>' : ''}
-      <img src="${conv.opponent_avatar || '/static/avatars/default.jpg'}" class="msg-avatar">
+      <img src="${conv.opponent_avatar || '/static/avatars/userspictures/default.jpg'}" class="msg-avatar">
       <div class="msg-content">
         <div class="msg-title">${conv.opponent_nick || '未知用户'}</div>
         <div class="msg-text">${conv.last_message || '暂无消息'}</div>

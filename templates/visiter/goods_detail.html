@@ -34,7 +34,7 @@
     <div class="search-bar"><input type="text" placeholder="搜索你想要的宝贝~" readonly></div>
     <div class="user-area">
       {% if user %}
-        <a href="/profile"><img src="{{ user.avatar or '/static/avatars/default.jpg' }}" class="mini-avatar">{{ user.nickname }}</a>
+        <a href="/profile"><img src="{{ user.avatar or '/static/avatars/userspictures/default.jpg' }}" class="mini-avatar">{{ user.nickname }}</a>
         <a href="/logout">退出</a>
       {% else %}
         <a href="/login">登录</a>
@@ -95,7 +95,7 @@
         </div>
 
         <div style="margin-top:50px;padding:30px;background:#f8f9fa;border-radius:20px;display:flex;align-items:center;gap:25px;">
-          <img src="{{ seller.avatar or '/static/avatars/default.jpg' }}" 
+          <img src="{{ seller.avatar or '/static/avatars/userspictures/default.jpg' }}" 
      style="width:90px;height:90px;border-radius:50%;object-fit:cover;flex-shrink:0;">
           <div>
             <h3 style="margin:0 0 10px 0;font-size:22px;color:#333;">{{ seller.nickname }}</h3>

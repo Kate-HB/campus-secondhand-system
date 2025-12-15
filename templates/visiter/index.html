@@ -229,7 +229,7 @@
       {% if user %}
         <!-- 已登录：显示头像、昵称、退出链接 -->
         <a href="/profile">
-          <img src="{{ user.avatar or '/static/avatars/default.jpg' }}" class="mini-avatar">
+          <img src="{{ user.avatar or '/static/avatars/userspictures/default.jpg' }}" class="mini-avatar">
           {{ user.nickname }}
           <!-- 新增：消息中心按钮 -->
         <a href="/messages" style="position:relative; margin-left:15px; background:rgb(14, 157, 234); color:white; padding:8px 16px; border-radius:30px; font-weight:bold; text-decoration:none;">

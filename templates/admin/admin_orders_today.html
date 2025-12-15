@@ -40,11 +40,11 @@
   </a>
 </td>
         <td>
-          <img src="{{ o.buyer_avatar or '/static/avatars/default.jpg' }}" style="width:30px;height:30px;border-radius:50%;vertical-align:middle;margin-right:8px;">
+          <img src="{{ o.buyer_avatar or '/static/avatars/userspictures/default.jpg' }}" style="width:30px;height:30px;border-radius:50%;vertical-align:middle;margin-right:8px;">
           {{ o.buyer_nick }}
         </td>
         <td>
-          <img src="{{ o.seller_avatar or '/static/avatars/default.jpg' }}" style="width:30px;height:30px;border-radius:50%;vertical-align:middle;margin-right:8px;">
+          <img src="{{ o.seller_avatar or '/static/avatars/userspictures/default.jpg' }}" style="width:30px;height:30px;border-radius:50%;vertical-align:middle;margin-right:8px;">
           {{ o.seller_nick }}
         </td>
         <td style="font-weight:bold; color:#e74c3c;">¥ {{ "%.2f"|format(o.total_amount) }}</td>
