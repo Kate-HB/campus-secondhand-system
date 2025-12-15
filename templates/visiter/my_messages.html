@@ -303,13 +303,16 @@
         </div>
       </div>
     `;
-    div.onclick = () => {
-  // 标记系统消息已读
+   div.onclick = () => {
+  // 标记当前会话已读（可选但推荐）
   fetch('/api/message/mark_read', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({})  // 标记所有
-  }).then(() => loadMessages());
+    body: JSON.stringify({opponent_id: conv.opponent_id})
+  }).catch(err => console.error('标记已读失败', err));
+
+  // 关键：跳转到私聊页面
+  location.href = `/messages?to=${conv.opponent_id}`;
 };
   }
 
