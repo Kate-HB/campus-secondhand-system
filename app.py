@@ -2179,9 +2179,5 @@ def admin_order_view(order_no):
                            user=fake_user)  # 关键：传入 user 避免模板报错
 # ====================== 程序启动入口 ======================
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()  # 临时添加：首次部署时自动创建所有表（上线后记得删掉这几行）
-        print("数据库表已自动创建（如果不存在）")
-    
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)  # debug=False 上线安全
