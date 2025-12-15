@@ -5,7 +5,6 @@
 数据库：MySQL (通过 pymysql 驱动)
 作者：未知（典型校园二手交易平台后端）
 """
-SYSTEM_USER_ID = 45  # ← 改成你查出来的id
 from flask import (
     Flask, render_template, request, jsonify, session,
     redirect, url_for, send_from_directory
