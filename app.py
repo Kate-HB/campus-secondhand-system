@@ -457,7 +457,7 @@ def upload_avatar():
 
     # 更新用户表中的头像字段
     user = User.query.get(session['user_id'])
-    user.avatar = f"/static/avatars/{filename}"
+    user.avatar = f"/static/avatars/userspictures/{filename}"
     db.session.commit()
     return jsonify(code=200, url=user.avatar, msg='上传成功')
 
@@ -495,7 +495,7 @@ def logout():
     return redirect(url_for('login'))
 
 
-@app.route('/static/avatars/<filename>')
+@app.route('/static/avatars/userspictures/<filename>')
 def avatar(filename):
     """安全提供头像访问路由（不直接暴露整个 static 目录）"""
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
@@ -1245,7 +1245,7 @@ def api_comment_list():
             'like_count': row.like_count or 0,
             'is_liked': bool(row.is_liked),
             'nickname': row.nickname,
-            'avatar': row.avatar or '/static/avatars/default.jpg',
+            'avatar': row.avatar or '/static/avatars/userspictures/default.jpg',
             'user_id': row.user_id,
             'replies': []
         }
@@ -1383,7 +1383,7 @@ def api_message_list():
             conv = {
                 'opponent_id': 0,
                 'opponent_nick': '系统通知',
-                'opponent_avatar': '/static/avatars/system.jpg',  # 可放一个系统图标
+                'opponent_avatar': '/static/avatars/userspictures/system.png',  # 可放一个系统图标
                 'last_message': r.content,
                 'last_time': r.created_at.strftime('%m-%d %H:%M'),
                 'unread_count': r.unread_count or 0
@@ -1392,7 +1392,7 @@ def api_message_list():
             conv = {
                 'opponent_id': r.opponent_id,
                 'opponent_nick': r.opponent_nick or '未知用户',
-                'opponent_avatar': r.opponent_avatar or '/static/avatars/default.jpg',
+                'opponent_avatar': r.opponent_avatar or '/static/avatars/userspictures/default.jpg',
                 'last_message': r.content,
                 'last_time': r.created_at.strftime('%m-%d %H:%M'),
                 'unread_count': r.unread_count or 0
@@ -1473,7 +1473,7 @@ def api_message_send():
             'msg_id': msg.msg_id,
             'from_user_id': session['user_id'],
             'from_nickname': sender.nickname,
-            'from_avatar': sender.avatar or '/static/avatars/default.jpg',
+            'from_avatar': sender.avatar or '/static/avatars/userspictures/default.jpg',
             'content': content,
             'created_at': msg.created_at.strftime('%Y-%m-%d %H:%M'),
             'is_me': True
@@ -1515,7 +1515,7 @@ def api_message_chat():
         msg = dict(row._mapping)
         msg['created_at'] = row.created_at.strftime('%Y-%m-%d %H:%M')
         msg['from_nickname'] = row.from_nickname_temp or row.from_nickname or '未知用户'
-        msg['from_avatar'] = row.from_avatar or '/static/avatars/default.jpg'
+        msg['from_avatar'] = row.from_avatar or '/static/avatars/userspictures/default.jpg'
         msg['is_me'] = (row.from_user_id == session['user_id'])
         messages.append(msg)
 
@@ -2094,7 +2094,7 @@ def admin_batch_goods():
         item = g.__dict__
         seller = User.query.get(g.user_id)
         item['seller_nickname'] = seller.nickname if seller else '未知用户'
-        item['seller_avatar'] = seller.avatar or '/static/avatars/default.jpg' if seller else '/static/avatars/default.jpg'
+        item['seller_avatar'] = seller.avatar or '/static/avatars/userspictures/default.jpg' if seller else '/static/avatars/userspictures/default.jpg'
         batch_goods.append(item)
 
     return render_template('admin/admin_batch_goods.html',
