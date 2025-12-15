@@ -2177,11 +2177,9 @@ def admin_order_view(order_no):
     return render_template('visiter/order_detail.html', 
                            order=order_data, 
                            user=fake_user)  # 关键：传入 user 避免模板报错
+with app.app_context():
+    db.create_all()  # 首次运行时自动创建所有表（开发环境非常方便
 # ====================== 程序启动入口 ======================
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()  # 首次运行时自动创建所有表（开发环境非常方便
-    print("校园二手交易系统用户界面启动成功！访问：http://127.0.0.1:5000")
-    print("校园二手交易系统管理员界面启动成功！访问：http://127.0.0.1:5000/admin")
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)  # debug=False 上线时关闭
