@@ -54,7 +54,7 @@ app.secret_key = os.getenv('SECRET_KEY', 'fallback-secret-key-for-dev')  # Flask
 
 # 数据库配置：使用 mysql+pymysql 驱动连接本地 MySQL
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:123456@localhost/ershousystem?charset=utf8mb4'
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL') or 'mysql+pymysql://root:123456@localhost/ershousystem?charset=utf8mb4'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL') #or 'mysql+pymysql://root:123456@localhost/ershousystem?charset=utf8mb4'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # 关闭修改追踪功能（节省内存）
 
 # 头像上传相关配置
