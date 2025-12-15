@@ -1,0 +1,78 @@
+{% extends "admin/admin_layout.html" %}
+{% block title %}毕业生清仓商品{% endblock %}
+{% block content %}
+<div class="card">
+  <h2 style="margin-top:0; color:#333; font-size:24px;">
+    毕业生清仓商品
+    <small style="font-size:16px; color:#666; margin-left:20px;">
+      共 {{ pagination.total }} 件
+    </small>
+  </h2>
+
+  <div class="search-bar">
+    <form method="get">
+      <input type="text" name="keyword" placeholder="搜索商品标题或描述..." value="{{ keyword or '' }}" style="width:400px;">
+      <button type="submit" class="btn btn-success">搜索</button>
+    </form>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>商品</th>
+        <th>卖家</th>
+        <th>价格</th>
+        <th>库存</th>
+        <th>新旧程度</th>
+        <th>状态</th>
+        <th>上架时间</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for g in goods %}
+      <tr>
+        <td>
+          <a href="/goods/{{ g.goods_id }}" target="_blank" style="font-weight:bold;">{{ g.title }}</a>
+        </td>
+        <td>
+          <img src="{{ g.seller_avatar }}" style="width:30px;height:30px;border-radius:50%;vertical-align:middle;margin-right:8px;">
+          {{ g.seller_nickname }}
+        </td>
+        <td style="color:#e74c3c; font-weight:bold;">¥ {{ g.price }}</td>
+        <td>{{ g.stock }}</td>
+        <td>{{ g.degree }}/10</td>
+        <td>
+          <span style="padding:4px 10px; border-radius:20px; font-size:13px; font-weight:bold;
+                       background:{{ '#27ae60' if g.status == 1 else '#e74c3c' }}; color:white;">
+            {{ '在售' if g.status == 1 else '下架' }}
+          </span>
+        </td>
+        <td>{{ g.on_shelf_time | strftime('%m-%d %H:%M') }}</td>
+        <td>
+          <a href="/goods/{{ g.goods_id }}" target="_blank" class="btn btn-small">查看</a>
+          {% if g.status == 1 %}
+          <a href="/admin/goods/off/{{ g.goods_id }}" class="btn btn-small btn-danger" onclick="return confirm('确定下架此商品？')">下架</a>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" style="text-align:center; color:#999; padding:60px;">暂无毕业生清仓商品</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- 分页 -->
+  {% if pagination.pages > 1 %}
+  <div style="text-align:center; margin-top:40px;">
+    {% if pagination.has_prev %}
+    <a href="?page={{ pagination.prev_num }}&keyword={{ keyword or '' }}" class="btn">上一页</a>
+    {% endif %}
+    <span style="margin:0 30px; font-size:16px;">第 {{ pagination.page }} / {{ pagination.pages }} 页</span>
+    {% if pagination.has_next %}
+    <a href="?page={{ pagination.next_num }}&keyword={{ keyword or '' }}" class="btn">下一页</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

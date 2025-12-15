@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <!-- 页面标题：显示在浏览器标签页 -->
+  <title>注册 - 校园二手交易系统</title>
+  
+  <!-- 引入全局样式表（包含 .container、.card、输入框、按钮等通用样式） -->
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+  <style>
+  body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+  }
+  .container {
+    width: 90%;
+    max-width: 500px;
+  }
+</style>
+
+  <!-- 
+    💡 容器：居中布局，最大宽度由 style.css 中的 .container 控制
+    适用于登录、注册等表单类页面
+  -->
+  <div class="container">
+    
+    <!-- 系统主标题（含中英文副标题） -->
+    <h1 class="system-title">
+      校园二手交易系统
+      <small>Campus Secondhand Market</small>
+    </h1>
+
+    <!-- ✅ 新增：返回首页按钮（统一风格） -->
+  <div style="text-align: center; margin: 20px 0;">
+    <a href="/" style="
+      display: inline-block;
+      padding: 10px 24px;
+      background: #ffce00;
+      color: #000;
+      text-decoration: none;
+      border-radius: 30px;
+      font-weight: bold;
+      font-size: 16px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+    " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+      ← 返回首页
+    </a>
+  </div>
+
+    <!-- 注册卡片：白色背景、圆角、阴影，提升视觉层级 -->
+    <div class="card">
+      <h2>创建账号</h2>
+      
+      <!-- 账号输入框：支持学号、手机号或邮箱（后端统一校验格式） -->
+      <input type="text" id="account" placeholder="学号/手机号/邮箱" required>
+      
+      <!-- 密码输入框：必填 -->
+      <input type="password" id="password" placeholder="设置密码" required>
+      
+      <!-- 昵称：非必填，用户可自定义（默认可能用学号后四位等） -->
+      <input type="text" id="nickname" placeholder="昵称（可选）">
+      
+      <!-- 邮箱：非必填，可用于找回密码或通知（若 account 不是邮箱） -->
+      <input type="email" id="email" placeholder="邮箱（可选）">
+      
+      <!-- 
+        注册按钮：
+        - type="button" 避免表单默认提交行为
+        - 点击时调用 main.js 中的 register() 函数
+        - 该函数会收集字段值并发送 POST 请求到 /register 接口
+      -->
+      <button type="button" onclick="register()">立即注册</button>
+      
+      <!-- 登录引导链接：已有账号用户可跳转 -->
+      <p>已有账号？<a href="/login">去登录</a></p>
+    </div>
+  </div>
+
+  <!-- 
+    引入前端交互脚本
+    包含：
+      - $() 快捷 DOM 查询
+      - register() 注册逻辑（验证 + 发送请求）
+      - login() 登录逻辑（虽本页未用，但文件通用）
+  -->
+  <script src="/static/js/main.js"></script>
+</body>
+</html>

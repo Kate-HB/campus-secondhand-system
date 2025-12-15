@@ -1,0 +1,83 @@
+{% extends "admin/admin_layout.html" %}
+{% block title %}今日订单记录{% endblock %}
+{% block content %}
+<div class="card">
+  <h2 style="margin-top:0; color:#333; font-size:24px;">
+    今日订单记录
+    <small style="font-size:16px; color:#666; margin-left:20px;">
+      {{ today_date }} · 共 {{ pagination.total }} 条
+    </small>
+  </h2>
+
+  <div class="search-bar">
+    <form method="get">
+      <input type="text" name="keyword" placeholder="搜索订单号或商品标题..." value="{{ keyword or '' }}" style="width:400px;">
+      <button type="submit" class="btn btn-success">搜索</button>
+    </form>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>订单号</th>
+        <th>商品</th>
+        <th>买家</th>
+        <th>卖家</th>
+        <th>金额</th>
+        <th>数量</th>
+        <th>状态</th>
+        <th>下单时间</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for o in orders %}
+      <tr>
+        <td>{{ o.order_no }}</td>
+        <td>
+  <a href="/admin/goods/view/{{ o.goods_id }}" target="_blank" style="font-weight:bold;color:#3498db;">
+    {{ o.title }}
+  </a>
+</td>
+        <td>
+          <img src="{{ o.buyer_avatar or '/static/avatars/default.jpg' }}" style="width:30px;height:30px;border-radius:50%;vertical-align:middle;margin-right:8px;">
+          {{ o.buyer_nick }}
+        </td>
+        <td>
+          <img src="{{ o.seller_avatar or '/static/avatars/default.jpg' }}" style="width:30px;height:30px;border-radius:50%;vertical-align:middle;margin-right:8px;">
+          {{ o.seller_nick }}
+        </td>
+        <td style="font-weight:bold; color:#e74c3c;">¥ {{ "%.2f"|format(o.total_amount) }}</td>
+        <td>{{ o.quantity }}</td>
+        <td>
+          <span style="padding:4px 10px; border-radius:20px; font-size:13px; font-weight:bold;
+                       background:{{ '#e74c3c' if o.pay_status == 0 else '#f39c12' if o.pay_status == 1 else '#27ae60' }};
+                       color:white;">
+            {{ ['待支付','已支付','已完成'][o.pay_status] }}
+          </span>
+        </td>
+        <td>{{ o.created_at | strftime('%H:%M:%S') }}</td>  <!-- 今日订单只显示时间 -->
+        <td>
+  <a href="/admin/order/view/{{ o.order_no }}" target="_blank" class="btn btn-small">查看详情</a>
+</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="9" style="text-align:center; color:#999; padding:60px;">今日暂无订单记录</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- 分页 -->
+  {% if pagination.pages > 1 %}
+  <div style="text-align:center; margin-top:40px;">
+    {% if pagination.has_prev %}
+    <a href="?page={{ pagination.prev_num }}&keyword={{ keyword or '' }}" class="btn">上一页</a>
+    {% endif %}
+    <span style="margin:0 30px; font-size:16px;">第 {{ pagination.page }} / {{ pagination.pages }} 页</span>
+    {% if pagination.has_next %}
+    <a href="?page={{ pagination.next_num }}&keyword={{ keyword or '' }}" class="btn">下一页</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

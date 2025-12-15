@@ -1,0 +1,73 @@
+{% extends "admin/admin_layout.html" %}
+{% block title %}用户管理{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>用户管理</h2>
+  <div class="search-bar">
+    <form method="get">
+      <input type="text" name="keyword" placeholder="搜索账号或昵称..." value="{{ keyword or '' }}">
+      <button type="submit" class="btn btn-success">搜索</button>
+    </form>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>账号</th>
+        <th>昵称</th>
+        <th>学号</th>
+        <th>注册时间</th>
+        <th>状态</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td>{{ u.user_id }}</td>
+        <td>{{ u.account }}</td>
+        <td>{{ u.nickname }}</td>
+        <td>{{ u.stu_id or '未认证' }}</td>
+        <td>{{ u.reg_time.strftime('%Y-%m-%d') }}</td>
+        <td>{{ '正常' if u.status == 1 else '已封禁' }}</td>
+        <td>
+          {% if u.status == 1 %}
+          <button class="btn btn-danger btn-small" onclick="banUser({{ u.user_id }}, true)">封禁</button>
+          {% else %}
+          <button class="btn btn-success btn-small" onclick="banUser({{ u.user_id }}, false)">解封</button>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" style="text-align:center; color:#999; padding:40px;">暂无用户</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- 分页 -->
+  {% if pagination.pages > 1 %}
+  <div style="text-align:center; margin-top:30px;">
+    {% if pagination.has_prev %}
+    <a href="?page={{ pagination.prev_num }}&keyword={{ keyword or '' }}" class="btn">上一页</a>
+    {% endif %}
+    <span style="margin:0 20px;">第 {{ pagination.page }} / {{ pagination.pages }} 页</span>
+    {% if pagination.has_next %}
+    <a href="?page={{ pagination.next_num }}&keyword={{ keyword or '' }}" class="btn">下一页</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<script>
+async function banUser(id, ban) {
+  if (!confirm(ban ? '确定封禁该用户？' : '确定解封该用户？')) return;
+  await fetch('/admin/user/ban', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({user_id:id, ban:ban})
+  });
+  location.reload();
+}
+</script>
+{% endblock %}

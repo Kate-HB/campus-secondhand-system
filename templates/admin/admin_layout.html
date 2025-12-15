@@ -1,0 +1,50 @@
+<!-- templates/admin_layout.html -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}后台管理{% endblock %} - 湖工大二手</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <style>
+    body { margin:0; background:#f0f2f5; font-family: "Microsoft YaHei", sans-serif; }
+    .header { background:#001529; color:white; height:64px; display:flex; align-items:center; padding:0 24px; font-size:20px; font-weight:bold; }
+    .sidebar { width:220px; background:#001529; position:fixed; top:64px; left:0; bottom:0; overflow-y:auto; }
+    .side-item { padding:16px 24px; color:rgba(255,255,255,0.65); cursor:pointer; transition:0.2s; }
+    .side-item:hover, .side-item.active { background:#1890ff; color:white; }
+    .main { margin-left:220px; padding:24px; min-height:calc(100vh - 64px); }
+    .card { background:white; border-radius:12px; padding:28px; box-shadow:0 4px 20px rgba(0,0,0,0.08); margin-bottom:24px; }
+    table { width:100%; border-collapse:collapse; margin-top:20px; }
+    th, td { padding:14px; text-align:left; border-bottom:1px solid #eee; }
+    th { background:#f8f9fa; font-weight:bold; }
+    .btn { padding:6px 12px; border:none; border-radius:6px; cursor:pointer; font-size:14px; }
+    .btn-danger { background:#e74c3c; color:white; }
+    .btn-warning { background:#f39c12; color:white; }
+    .btn-success { background:#27ae60; color:white; }
+    .btn-small { padding:4px 10px; font-size:13px; }
+    .search-bar { padding:12px; margin-bottom:20px; }
+    .search-bar input { width:300px; padding:10px; border:1px solid #ddd; border-radius:8px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    湖工大二手 - 后台管理
+    <div style="margin-left:auto;">
+      <span>{{ session.get('nickname', '管理员') }}</span>
+      <a href="/admin/logout" style="color:white; margin-left:30px; text-decoration:none;">退出登录</a>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <div class="side-item {% if request.path == '/admin/dashboard' %}active{% endif %}" onclick="location.href='/admin/dashboard'">数据看板</div>
+    <div class="side-item {% if request.path.startswith('/admin/goods') %}active{% endif %}" onclick="location.href='/admin/goods'">商品管理</div>
+    <div class="side-item {% if request.path.startswith('/admin/users') %}active{% endif %}" onclick="location.href='/admin/users'">用户管理</div>
+    <div class="side-item {% if request.path.startswith('/admin/categories') %}active{% endif %}" onclick="location.href='/admin/categories'">分类管理</div>
+    <div class="side-item {% if request.path.startswith('/admin/reports') %}active{% endif %}" onclick="location.href='/admin/reports'">举报管理</div>
+  </div>
+
+  <div class="main">
+    {% block content %}{% endblock %}
+  </div>
+</body>
+</html>

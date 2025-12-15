@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>订单确认 - 湖工大二手</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <style>
+    .header { 
+      position:fixed;top:0;left:0;right:0;height:60px;background:#ffce00;
+      display:flex;align-items:center;padding:0 15px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:1000; 
+    }
+    /* 关键修复：加大顶部间距 + 明确 margin */
+    .main { 
+      padding-top: 90px;                /* 从 80px → 90px，彻底避开 header */
+      background:#f5f5f5;
+      min-height:100vh;
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
+      padding-bottom:40px;
+    }
+    .card { 
+      background:white;
+      border-radius:20px;
+      padding:24px;
+      box-shadow:0 8px 30px rgba(0,0,0,0.12);
+      width:100%;
+      max-width:600px;
+      margin-top:20px;                  /* 新增：强制与 header 拉开距离 */
+    }
+    .goods { display:flex;gap:20px;margin:20px 0;padding:20px;background:#f9f9f9;border-radius:16px; }
+    .goods img { width:100px;height:100px;object-fit:cover;border-radius:12px; }
+    .btn-pay { background:#ff4757;color:white;padding:18px;text-align:center;border-radius:16px;font-size:20px;font-weight:bold;cursor:pointer;margin-top:30px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo"><h1>湖工大二手</h1></div>
+    <div class="search-bar"><input type="text" placeholder="搜索你想要的宝贝~" readonly></div>
+    <div class="user-area">
+      <a href="/profile">
+        <img src="{{ user.avatar or '/static/avatars/default.jpg' }}" 
+             style="width:36px;height:36px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px;">
+        {{ user.nickname }}
+      </a>
+      <a href="/logout">退出</a>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="card">
+      <h2 style="text-align:center;margin-bottom:24px;">确认订单</h2>
+      
+      <div class="goods">
+        <img src="{{ goods.cover_img or '/static/avatars/goodspictures/default.jpg' }}">
+        <div>
+          <h3>{{ goods.title }}</h3>
+          <p style="color:#666;margin:10px 0;">分类：{{ goods.cate_name }} · 新旧：{{ goods.degree }}/10</p>
+          <div style="font-size:32px;color:#e74c3c;font-weight:bold;">¥ {{ "%.2f"|format(goods.price) }}</div>
+        </div>
+      </div>
+
+      <div style="padding:20px 0;border-top:1px solid #eee;">
+        <p>支付方式：<strong>虚拟支付（校园内一键完成）</strong></p>
+        <p>交易方式：<strong>当面交易</strong></p>
+      </div>
+
+      <div class="btn-pay" onclick="payNow({{ goods.goods_id }})">立即下单</div>
+    </div>
+  </div>
+
+  <script>
+  async function payNow(goods_id) {
+      const btn = event.target;
+      btn.textContent = '创建订单中...';
+      btn.disabled = true;
+
+      const res = await fetch('/api/order/create', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({goods_id: goods_id, quantity: 1})
+      });
+      const d = await res.json();
+
+      if (d.code === 200) {
+          alert('订单创建成功！请在1小时内完成支付');
+          location.href = '/order/' + d.order_no;
+      } else {
+          alert(d.msg || '下单失败');
+          btn.textContent = '立即下单';
+          btn.disabled = false;
+      }
+  }
+  </script>
+</body>
+</html>

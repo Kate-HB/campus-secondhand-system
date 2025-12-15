@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>订单详情 - 湖工大二手</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <style>
+    .header { 
+      position:fixed;top:0;left:0;right:0;height:60px;background:#ffce00;
+      display:flex;align-items:center;padding:0 15px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:1000; 
+    }
+    .logo h1 { font-size:32px;color:#000;font-weight:bold;margin:0; }
+    .search-bar { flex:1;margin:0 15px;height:40px;background:white;border-radius:25px;display:flex;align-items:center;padding:0 15px;box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+    .search-bar input { border:none;outline:none;flex:1;font-size:16px; }
+    .user-area a { color:#000;text-decoration:none;margin-left:15px;font-weight:bold; }
+    .mini-avatar { width:36px;height:36px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px; }
+
+    /* 关键修复：彻底避免被 header 遮挡 */
+    .main { 
+      padding-top: 100px;               /* 加大顶部间距，彻底避开 60px header */
+      background:#f5f5f5;
+      min-height:100vh;
+      display:flex;
+      justify-content:center;
+      padding:20px 15px 60px;           /* 左右底部留白 */
+    }
+    .card { 
+      background:white;
+      border-radius:20px;
+      padding:24px;                     /* 原 30px → 24px，更紧凑低矮 */
+      box-shadow:0 8px 30px rgba(0,0,0,0.12);
+      width:100%;
+      max-width:700px;
+      margin-top:20px;                  /* 强制与 header 拉开距离 */
+    }
+
+    .order-header { display:flex;justify-content:space-between;align-items:center;padding-bottom:20px;border-bottom:2px solid #f0f0f0;margin-bottom:20px; }
+    .order-no { font-size:18px;font-weight:bold;color:#333; }
+    .order-status { padding:8px 16px;border-radius:30px;font-weight:bold;font-size:15px; }
+    .status-0 { background:#ffebee;color:#c62828; }
+    .status-1 { background:#e3f2fd;color:#1565c0; }
+    .status-2 { background:#e8f5e8;color:#2e7d32; }
+    .status-3 { background:#f5f5f5;color:#999; }
+
+    .goods-item { display:flex;gap:20px;padding:20px 0;border-bottom:1px solid #eee; }
+    .goods-img { width:120px;height:120px;border-radius:16px;object-fit:cover;flex-shrink:0; }
+    .goods-info { flex:1; }
+    .goods-title { font-size:18px;font-weight:bold;margin-bottom:8px; }
+    .goods-price { font-size:24px;color:#e74c3c;font-weight:bold;margin:8px 0; }
+
+    .info-grid { display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:30px 0;font-size:15px;color:#666; }
+    .info-grid div strong { color:#333; }
+
+    .btn-confirm { background:#ff4757;color:white;padding:18px;text-align:center;border-radius:16px;font-size:20px;font-weight:bold;cursor:pointer;margin-top:30px; }
+    .btn-pay { background:#ff4757;color:white; }
+    .btn-disabled { background:#ccc !important;cursor:not-allowed !important; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo"><h1>湖工大二手</h1></div>
+    <div class="search-bar"><input type="text" placeholder="搜索你想要的宝贝~" readonly></div>
+    <div class="user-area">
+      <a href="/profile"><img src="{{ user.avatar or '/static/avatars/default.jpg' }}" class="mini-avatar">{{ user.nickname }}</a>
+      <a href="/logout">退出</a>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="card">
+      <div class="order-header">
+        <div class="order-no">订单号：{{ order.order_no }}</div>
+        <div style="text-align:right;">
+          <div class="order-status status-{{ order.pay_status }}">
+            {{ ['待支付','已支付','已完成','已取消'][order.pay_status] }}
+          </div>
+          {% if order.pay_status == 0 %}
+          <div style="margin-top:10px;font-size:15px;color:#e74c3c;font-weight:bold;">
+            <span id="countdown">计算中...</span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="goods-item">
+        <img src="{{ order.cover_img or '/static/avatars/goodspictures/default.jpg' }}" class="goods-img">
+        <div class="goods-info">
+          <div class="goods-title">{{ order.title }}</div>
+          <div style="color:#999;font-size:14px;">
+            {{ '买家' if order.seller_id == user.user_id else '卖家' }}：
+            {{ order.buyer_nick if order.seller_id == user.user_id else order.seller_nick }}
+          </div>
+          <div class="goods-price">¥ {{ "%.2f"|format(order.total_amount) }} × {{ order.quantity }}</div>
+        </div>
+      </div>
+      
+      {% if order.pay_status in [1, 2] %}
+        {% if order.buyer_id == user.user_id %}
+          <a href="/chat/{{ order.order_id }}" 
+             style="background:#667eea;margin:20px 0;display:block;text-align:center;padding:16px;border-radius:16px;font-size:18px;font-weight:bold;color:white;text-decoration:none;">
+            联系卖家聊天
+          </a>
+        {% elif order.seller_id == user.user_id %}
+          <a href="/chat/{{ order.order_id }}" 
+             style="background:#667eea;margin:20px 0;display:block;text-align:center;padding:16px;border-radius:16px;font-size:18px;font-weight:bold;color:white;text-decoration:none;">
+            联系买家聊天
+          </a>
+        {% endif %}
+      {% endif %}
+
+      <div class="info-grid">
+        <div><strong>下单时间</strong><br>{{ order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else '未知' }}</div>
+        <div><strong>付款时间</strong><br>{{ order.pay_time.strftime('%Y-%m-%d %H:%M') if order.pay_time else '未支付' }}</div>
+        <div><strong>确认收货时间</strong><br>{{ order.confirm_time.strftime('%Y-%m-%d %H:%M') if order.confirm_time else '未确认' }}</div>
+        <div><strong>订单金额</strong><br>¥ {{ "%.2f"|format(order.total_amount) }}</div>
+      </div>
+
+      {% if order.pay_status == 0 %}
+        <div class="btn-confirm btn-pay" id="pay-btn" onclick="payOrder('{{ order.order_no }}')">
+          立即支付
+        </div>
+      {% endif %}
+
+      {% if order.pay_status == 1 and order.buyer_id == user.user_id %}
+        <div class="btn-confirm" onclick="confirmOrder('{{ order.order_no }}')">
+          确认收货
+        </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+  <script>
+    async function confirmOrder(no) {
+      if (!confirm('确认已收到商品？交易将完成')) return;
+      const res = await fetch('/api/order/confirm/' + no, {method:'POST'});
+      const d = await res.json();
+      alert(d.msg);
+      if (d.code === 200) location.reload();
+    }
+  </script>
+
+  <script>
+    async function payOrder(order_no) {
+      const btn = document.getElementById('pay-btn');
+      if (!btn) return;
+      btn.textContent = '支付中...';
+      btn.disabled = true;
+
+      const res = await fetch('/api/order/pay/' + order_no, {method: 'POST'});
+      const d = await res.json();
+
+      alert(d.msg);
+      if (d.code === 200) {
+        location.reload();
+      } else {
+        btn.textContent = '立即支付';
+        btn.disabled = false;
+      }
+    }
+  </script>
+
+  <script>
+    {% if order.pay_status == 0 %}
+    const createdAt = new Date('{{ order.created_at.strftime('%Y-%m-%d %H:%M:%S') }}');
+    const deadline = new Date(createdAt.getTime() + 60 * 60 * 1000);
+
+    const countdownElement = document.getElementById('countdown');
+    const payBtn = document.getElementById('pay-btn');
+
+    function updateCountdown() {
+      const now = new Date();
+      const left = deadline - now;
+
+      if (left <= 0) {
+        clearInterval(timer);
+        countdownElement.textContent = '订单已超时';
+        countdownElement.style.color = '#999';
+
+        if (payBtn) {
+          payBtn.textContent = '订单已超时';
+          payBtn.classList.add('btn-disabled');
+          payBtn.onclick = null;
+        }
+        return;
+      }
+
+      const m = Math.floor(left / 60000);
+      const s = Math.floor((left % 60000) / 1000);
+      countdownElement.textContent = `剩余 ${m}分${s}秒 完成支付`;
+    }
+
+    updateCountdown();
+    const timer = setInterval(updateCountdown, 1000);
+    {% endif %}
+  </script>
+</body>
+</html>

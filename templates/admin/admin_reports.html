@@ -1,0 +1,75 @@
+{% extends "admin/admin_layout.html" %}
+{% block title %}举报管理{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>举报管理（共 {{ pagination.total }} 条）</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>时间</th>
+        <th>举报人</th>
+        <th>类型</th>
+        <th>目标</th>
+        <th>原因</th>
+        <th>说明</th>
+        <th>状态</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in reports %}
+      <tr>
+        <td>{{ r.created_at.strftime('%m-%d %H:%M') }}</td>
+        <td>{{ r.reporter.nickname or '用户'+r.reporter_id }}</td>
+        <td>{{ '商品' if r.target_type == 'goods' else '用户' }}</td>
+        <td>
+          {% if r.target_type == 'goods' %}
+          <a href="/goods/{{ r.target_id }}" target="_blank">商品{{ r.target_id }}</a>
+          {% else %}
+          用户{{ r.target_id }}
+          {% endif %}
+        </td>
+        <td>{{ r.reason }}</td>
+        <td>{{ r.description or '-' }}</td>
+        <td>
+          <span style="padding:4px 10px; border-radius:4px; background:{{ '#fffbe6' if r.status==0 else '#f6ffed' if r.status==1 else '#f5f5f5' }};">
+            {{ ['待处理','已处理','已忽略'][r.status] }}
+          </span>
+        </td>
+        <td>
+          {% if r.status == 0 %}
+          <button class="btn btn-success btn-small" onclick="handle({{ r.report_id }},1,true)">处理并下架</button>
+          <button class="btn btn-small" onclick="handle({{ r.report_id }},1,false)">仅处理</button>
+          <button class="btn btn-warning btn-small" onclick="handle({{ r.report_id }},2,false)">忽略</button>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" style="text-align:center; color:#999; padding:40px;">暂无举报</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- 分页 -->
+  {% if pagination.pages > 1 %}
+  <div style="text-align:center; margin-top:30px;">
+    {% if pagination.has_prev %}<a href="?page={{ pagination.prev_num }}" class="btn">上一页</a>{% endif %}
+    <span style="margin:0 20px;">第 {{ pagination.page }} / {{ pagination.pages }} 页</span>
+    {% if pagination.has_next %}<a href="?page={{ pagination.next_num }}" class="btn">下一页</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<script>
+async function handle(id, status, autoOff) {
+  if (!confirm('确认此操作？')) return;
+  await fetch('/admin/report/handle', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({report_id:id, status:status, auto_off_goods:autoOff})
+  });
+  location.reload();
+}
+</script>
+{% endblock %}

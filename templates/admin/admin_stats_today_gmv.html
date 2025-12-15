@@ -1,0 +1,67 @@
+{% extends "admin/admin_layout.html" %}
+{% block title %}今日交易额小时分布{% endblock %}
+{% block content %}
+<div class="card">
+  <h2 style="margin-top:0; color:#333; font-size:24px;">
+    今日交易额小时分布
+    <small style="font-size:16px; color:#666; margin-left:20px;">
+      总金额：¥ {{ "%.2f"|format(total_today) }}
+    </small>
+  </h2>
+
+  <div style="margin-top:30px;">
+    <canvas id="hourlyChart" height="120"></canvas>
+  </div>
+
+  <div style="margin-top:40px; text-align:center; color:#666;">
+  数据更新时间：{{ current_time }}
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const ctx = document.getElementById('hourlyChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: {{ hours|tojson }},
+      datasets: [{
+        label: '交易额 (元)',
+        data: {{ amounts|tojson }},
+        backgroundColor: 'rgba(245, 87, 108, 0.8)',
+        borderColor: '#f5576c',
+        borderWidth: 1,
+        borderRadius: 8,
+        maxBarThickness: 40
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return '¥ ' + context.parsed.y.toFixed(2);
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) {
+              return '¥' + value;
+            }
+          },
+          grid: { color: 'rgba(0,0,0,0.05)' }
+        },
+        x: {
+          grid: { display: false }
+        }
+      }
+    }
+  });
+</script>
+{% endblock %}

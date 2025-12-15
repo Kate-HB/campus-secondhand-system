@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登录 - 校园二手交易系统</title>
+  
+  <!-- 引入全局样式（标题发光动画等） -->
+  <link rel="stylesheet" href="/static/css/style.css">
+
+  <!-- 仅登录页专属样式：恢复紫蓝渐变背景 + 居中布局 -->
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      width: 90%;
+      max-width: 500px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- 发光大标题 -->
+    <h1 class="system-title">
+      校园二手交易系统
+      <small>Campus Secondhand Market</small>
+    </h1>
+
+    <!-- 返回首页按钮 -->
+    <div style="text-align: center; margin: 20px 0;">
+      <a href="/" style="
+        display: inline-block;
+        padding: 10px 24px;
+        background: #ffce00;
+        color: #000;
+        text-decoration: none;
+        border-radius: 30px;
+        font-weight: bold;
+        font-size: 16px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+      " onmouseover="this.style.transform='scale(1.05)'" 
+         onmouseout="this.style.transform='scale(1)'">
+        ← 返回首页
+      </a>
+    </div>
+
+    <!-- 登录卡片 -->
+    <div class="card">
+      <h2>欢迎登录</h2>
+      
+      <input type="text" id="account" placeholder="学号 / 手机号 / 邮箱" required>
+      <input type="password" id="password" placeholder="密码" required>
+      
+      <button onclick="login()">登录</button>
+      
+      <p>没有账号？<a href="/register">立即注册</a></p>
+    </div>
+  </div>
+
+  <script src="/static/js/main.js"></script>
+</body>
+</html>

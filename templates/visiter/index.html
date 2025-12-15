@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>湖工大二手交易系统</title>
+
+  <!-- 
+    💡 说明：本页面为网站首页（商品列表页）
+    - 使用 Jinja2 模板语法（Flask 默认模板引擎）
+    - 包含顶部导航栏、左侧分类栏、右侧商品网格、分页控件
+    - 响应式设计：适配手机和平板
+  -->
+
+  <style>
+  /* ———————————————————————————————— */
+  /* 全局重置与基础设置 */
+  /* ———————————————————————————————— */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box; /* 所有元素使用 border-box 盒模型，避免布局错乱 */
+  }
+  body {
+    font-family: "Microsoft YaHei", sans-serif; /* 中文友好字体 */
+    background: #f5f5f5;                       /* 浅灰色背景，突出白色卡片 */
+    min-height: 100vh;                         /* 至少占满视口高度 */
+    padding-bottom: 60px;                      /* 底部留白，防止内容被固定底部遮挡（虽然本页无底部栏） */
+  }
+
+  /* ———————————————————————————————— */
+  /* 顶部黄色导航栏（固定定位） */
+  /* ———————————————————————————————— */
+  .header {
+    position: fixed;                           /* 固定在顶部，滚动时不消失 */
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: #ffce00;                       /* 醒目的黄色背景 */
+    display: flex;                             /* Flex 布局：左右对齐 */
+    align-items: center;                       /* 垂直居中 */
+    padding: 0 15px;                           /* 左右内边距 */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* 添加阴影，提升层次感 */
+    z-index: 1000;                             /* 置于最上层，不被其他内容覆盖 */
+  }
+  .logo h1 {
+    font-size: 32px;
+    color: #000;
+    font-weight: bold;
+  }
+
+  /* ———————————————————————————————— */
+  /* 搜索框（居中，圆角） */
+  /* ———————————————————————————————— */
+  .search-bar {
+    flex: 1;                                   /* 占据中间剩余空间 */
+    margin: 0 15px;                            /* 左右留空 */
+    height: 40px;
+    background: white;
+    border-radius: 25px;                       /* 超大圆角，形成胶囊形状 */
+    display: flex;
+    align-items: center;
+    padding: 0 15px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  .search-bar input {
+    border: none;
+    outline: none;                             /* 去除聚焦时的默认边框 */
+    flex: 1;
+    font-size: 16px;
+  }
+
+  /* ———————————————————————————————— */
+  /* 用户区域（登录/注册 或 头像+退出） */
+  /* ———————————————————————————————— */
+  .user-area a {
+    color: #000;
+    text-decoration: none;
+    margin-left: 15px;                         /* 链接之间留空 */
+    font-weight: bold;
+  }
+  .mini-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;                        /* 圆形头像 */
+    vertical-align: middle;                    /* 与文字垂直对齐 */
+    margin-right: 6px;
+  }
+
+  /* 主内容区：从顶部导航下方开始 */
+  .main {
+    padding-top: 70px;                         /* 避开 60px 高的 header + 10px 安全间距 */
+  }
+
+  /* ———————————————————————————————— */
+  /* 左侧分类栏（桌面端固定，移动端变为普通块） */
+  /* ———————————————————————————————— */
+  .sidebar {
+    position: fixed;                           /* 桌面端固定定位 */
+    top: 70px;                                 /* 在 header 下方 */
+    left: 20px;                                /* 距离左边 20px */
+    width: 180px;                              /* 固定宽度，避免太宽 */
+    height: calc(100vh - 80px);                /* 高度 = 视口高度 - 顶部留白 */
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    padding: 12px 0;
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .categories-list {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;                                 /* 分类项之间的垂直间距 */
+    align-items: stretch;                      /* 关键：让每个子项宽度撑满父容器 */
+    padding: 0 12px;
+    flex: 1;                                   /* 占据剩余空间 */
+  }
+
+  .cat-item {
+    padding: 8px 0;
+    color: white;
+    border-radius: 24px;
+    font-size: 14px;
+    font-weight: bold;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    /* 背景色由 Jinja2 动态注入（见 HTML 部分） */
+    width: 100%;                               /* ← 关键：确保按钮撑满 */
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.15s;               /* 悬停轻微放大 */
+  }
+  .cat-item:hover {
+    transform: scale(1.03);
+  }
+
+  /* ———————————————————————————————— */
+  /* 右侧商品展示区 */
+  /* ———————————————————————————————— */
+  .goods-container {
+    margin-left: 200px;                        /* = sidebar(180) + left(20)，紧贴左侧栏右侧 */
+    padding: 0 12px 20px;
+  }
+
+  .goods-grid {
+    display: grid;
+    /* 自适应列数：每列最小 180px，最大 1fr（自动填充） */
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 18px;                                 /* 商品卡片间距 */
+  }
+
+  .goods-card {
+    background: white;
+    border-radius: 18px;
+    overflow: hidden;                          /* 防止图片溢出圆角 */
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+    transition: 0.3s;
+  }
+  .goods-card:hover {
+    transform: translateY(-8px);               /* 悬停上浮效果 */
+  }
+
+  .goods-img {
+    width: 100%;
+    height: 180px;
+    background: #eee center / cover no-repeat; /* 默认灰色背景 + 居中裁剪 */
+  }
+
+  .goods-info {
+    padding: 12px;
+  }
+  .goods-title {
+    font-size: 15px;
+    margin-bottom: 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;                   /* 超出部分显示省略号 */
+    white-space: nowrap;                       /* 单行显示 */
+    color: #333;
+  }
+  .goods-price {
+    color: #ff5000;                            /* 醒目的橙红色价格 */
+    font-size: 17px;
+    font-weight: bold;
+  }
+
+  /* ———————————————————————————————— */
+  /* 响应式断点：平板及手机 */
+  /* ———————————————————————————————— */
+  @media (max-width: 768px) {
+    .sidebar {
+      position: static;                        /* 移动端取消固定定位 */
+      width: 100%;
+      margin-bottom: 20px;
+      box-shadow: none;
+      border-radius: 0;
+    }
+    .categories-list {
+      gap: 6px;                                /* 减小间距，节省空间 */
+    }
+    .goods-container {
+      margin-left: 0;                          /* 商品区不再缩进 */
+      padding: 0 12px;
+    }
+  }
+  </style>
+</head>
+<body>
+
+  <!-- 顶部黄条导航 -->
+  <div class="header">
+    <div class="logo"><h1>湖工大二手</h1></div>
+    
+    <!-- 搜索框（当前为只读，未来可扩展） -->
+    <div class="search-bar">
+  <form action="/" method="get" style="width:100%; display:flex;">
+    <input type="text" name="keyword" placeholder="搜索你想要的宝贝~" 
+           value="{{ keyword or '' }}" style="border:none; outline:none; flex:1; font-size:16px;">
+    <button type="submit" style="background:none; border:none; cursor:pointer; padding:0 10px;">
+      🔍
+    </button>
+  </form>
+</div>
+    
+    <!-- 用户区域：根据是否登录动态显示 -->
+    <div class="user-area">
+      {% if user %}
+        <!-- 已登录：显示头像、昵称、退出链接 -->
+        <a href="/profile">
+          <img src="{{ user.avatar or '/static/avatars/default.jpg' }}" class="mini-avatar">
+          {{ user.nickname }}
+          <!-- 新增：消息中心按钮 -->
+        <a href="/messages" style="position:relative; margin-left:15px; background:rgb(14, 157, 234); color:white; padding:8px 16px; border-radius:30px; font-weight:bold; text-decoration:none;">
+          消息
+          <!-- 未读消息小红点（只有未读数 > 0 时显示） -->
+          {% if unread_count > 0 %}
+            <span style="position:absolute; top:-8px; right:-8px; 
+                         background:#ff0000; color:white; font-size:12px; 
+                         min-width:18px; height:18px; line-height:18px; 
+                         border-radius:50%; text-align:center; 
+                         font-weight:bold; padding:0 4px;">
+              {{ unread_count if unread_count < 100 else '99+' }}
+            </span>
+          {% endif %}
+        </a>
+        <a href="/publish" style="background:#ff4757;color:white;padding:8px 16px;border-radius:30px;font-weight:bold;">✚ 发布</a>
+        <a href="/logout">退出</a>
+      {% else %}
+        <!-- 未登录：显示登录/注册链接 -->
+        <a href="/login">登录</a>
+        <a href="/register">注册</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- 主内容区 -->
+  <div class="main">
+    <!-- 左侧分类栏 -->
+    <div class="sidebar">
+      <div class="categories-list">
+  <!-- 全部分类（点击返回全站推荐） -->
+  <a href="/" class="cat-item" style="background-color: #ffce00; color: #000; font-weight: bold;">
+    全部分类
+  </a>
+
+  
+  {% for cat in categories %}
+  <a href="/?cate_id={{ cat.cate_id }}" 
+     class="cat-item" 
+     style="background-color: {{ ['#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FFEEAD','#D4A5A5','#9B59B6','#3498DB','#FF8C8C','#77D1C5'][loop.index0 % 10] }}; 
+            {% if request.args.get('cate_id') == cat.cate_id|string %}border: 3px solid #000; transform: scale(1.05); font-weight: bold;{% endif %}">
+    {{ cat.name }}
+    {% if request.args.get('cate_id') == cat.cate_id|string %}
+      <span style="margin-left:8px; font-size:12px;">✓</span>
+    {% endif %}
+  </a>
+  {% endfor %}
+</div>
+    </div>
+
+        <!-- 右侧推荐内容区（替换原来的 goods-container） -->
+    <div style="margin-left: 220px; padding: 20px 20px 40px;">  <!-- 留出左侧栏空间 -->
+
+          <!-- 搜索模式：显示搜索结果 -->
+    {% if keyword %}
+    <div style="padding: 20px;">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <h2 style="font-size: 28px; color: #e74c3c;">
+          搜索 "{{ keyword }}" 的结果
+        </h2>
+        <a href="/" style="color: #666; font-size: 16px; text-decoration: none;">
+          ✕ 清空搜索
+        </a>
+      </div>
+
+      {% if search_goods %}
+      <div class="goods-grid">
+        {% for g in search_goods %}
+        <a href="/goods/{{ g.goods_id }}" class="goods-card">
+          <div class="goods-img" style="background-image: url('{{ g.cover_img }}')"></div>
+          <div class="goods-info">
+            <div class="goods-title">{{ g.title }}</div>
+            <div class="goods-price">¥ {{ "%.2f"|format(g.price) }}</div>
+            <div style="font-size: 12px; color: #999; margin-top: 6px;">
+              {{ g.user_nickname }}
+            </div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div style="text-align: center; padding: 100px; color: #999; font-size: 20px;">
+        暂无搜索结果，试试其他关键词吧~
+      </div>
+      {% endif %}
+    </div>
+    {% else %}
+    <!-- 非搜索模式：显示四大推荐区 -->
+    
+                <!-- 🔥 全站热门推荐 -->
+      {% if hot_goods %}
+      <div style="margin-bottom: 50px;">
+        <h2 style="font-size: 26px; font-weight: bold; text-align: center; margin-bottom: 25px; color: #e74c3c;">
+          🔥 全站热门推荐
+        </h2>
+        <div class="goods-grid">
+          {% for g in hot_goods %}
+          <a href="/goods/{{ g.goods_id }}" class="goods-card">
+            <div class="goods-img" style="background-image: url('{{ g.cover_img }}')"></div>
+            <div class="goods-info">
+              <div class="goods-title">{{ g.title }}</div>
+              <div class="goods-price">¥ {{ "%.2f"|format(g.price) }}</div>
+              <div style="font-size: 12px; color: #999; margin-top: 6px;">
+                ❤️ {{ g.favor_num }} 收藏 · 👀 {{ g.view_num }} 浏览
+              </div>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- 🆕 最新上架 -->
+      {% if newest_goods %}
+      <div style="margin-bottom: 50px;">
+        <h2 style="font-size: 26px; font-weight: bold; text-align: center; margin-bottom: 25px; color: #9b59b6;">
+          🆕 最新上架
+        </h2>
+        <div class="goods-grid">
+          {% for g in newest_goods %}
+          <a href="/goods/{{ g.goods_id }}" class="goods-card">
+            <div class="goods-img" style="background-image: url('{{ g.cover_img }}')"></div>
+            <div class="goods-info">
+              <div class="goods-title">{{ g.title }}</div>
+              <div class="goods-price">¥ {{ "%.2f"|format(g.price) }}</div>
+              <div style="font-size: 12px; color: #999; margin-top: 6px;">
+                {{ g.degree }}成新 · {{ g.user_nickname }}
+              </div>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- 🎓 应届毕业生清仓专区 -->
+      {% if batch_goods %}
+      <div style="margin-bottom: 50px;">
+        <h2 style="font-size: 26px; font-weight: bold; text-align: center; margin-bottom: 25px; color: #27ae60;">
+          🎓 应届毕业生清仓专区
+        </h2>
+        <div class="goods-grid">
+          {% for g in batch_goods %}
+          <a href="/goods/{{ g.goods_id }}" class="goods-card" style="position: relative;">
+            <div style="position: absolute; top: 10px; left: 10px; background: #e74c3c; color: white; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: bold; z-index: 10;">
+              毕业清仓
+            </div>
+            <div class="goods-img" style="background-image: url('{{ g.cover_img }}')"></div>
+            <div class="goods-info">
+              <div class="goods-title">{{ g.title }}</div>
+              <div class="goods-price">¥ {{ "%.2f"|format(g.price) }}</div>
+              <div style="font-size: 12px; color: #999; margin-top: 6px;">
+                {{ g.user_nickname }}
+              </div>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- 🏫 本院热销 -->
+      {% if same_college_goods %}
+      <div style="margin-bottom: 50px;">
+        <h2 style="font-size: 26px; font-weight: bold; text-align: center; margin-bottom: 25px; color: #3498db;">
+          🏫 {{ user.college }} · 本院热销
+        </h2>
+        <div class="goods-grid">
+          {% for g in same_college_goods %}
+          <a href="/goods/{{ g.goods_id }}" class="goods-card">
+            <div class="goods-img" style="background-image: url('{{ g.cover_img }}')"></div>
+            <div class="goods-info">
+              <div class="goods-title">{{ g.title }}</div>
+              <div class="goods-price">¥ {{ "%.2f"|format(g.price) }}</div>
+              <div style="font-size: 12px; color: #999; margin-top: 6px;">
+                ❤️ {{ g.favor_num }} 收藏 · {{ g.degree }}成新
+              </div>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      {% endif %}
+  <!-- 
+    💡 分页控件（仅当总页数 > 1 时显示）
+    使用 url_for('index', page=...) 生成分页链接
+  -->
+  {% if total_pages and total_pages > 1 %}
+  <div style="text-align: center; margin-top: 30px; margin-bottom: 20px;">
+    <div style="display: inline-flex; gap: 8px; flex-wrap: wrap; justify-content: center;">
+      <!-- 首页 -->
+      {% if page > 1 %}
+        <a href="{{ url_for('index', page=1) }}"
+           style="padding: 8px 14px; background: #ffce00; color: #000; text-decoration: none; border-radius: 6px; font-weight: bold;">首页</a>
+      {% else %}
+        <span style="padding: 8px 14px; background: #e0e0e0; color: #999; border-radius: 6px; font-weight: bold;">首页</span>
+      {% endif %}
+
+      <!-- 上一页 -->
+      {% if page > 1 %}
+        <a href="{{ url_for('index', page=page-1) }}"
+           style="padding: 8px 14px; background: #ffce00; color: #000; text-decoration: none; border-radius: 6px; font-weight: bold;">&laquo; 上一页</a>
+      {% else %}
+        <span style="padding: 8px 14px; background: #e0e0e0; color: #999; border-radius: 6px; font-weight: bold;">&laquo; 上一页</span>
+      {% endif %}
+
+      <!-- 当前页码信息 -->
+      <span style="padding: 8px 14px; background: white; color: #333; border: 1px solid #ddd; border-radius: 6px; font-weight: bold;">
+        第 {{ page }} / {{ total_pages }} 页
+      </span>
+
+      <!-- 下一页 -->
+      {% if page < total_pages %}
+        <a href="{{ url_for('index', page=page+1) }}"
+           style="padding: 8px 14px; background: #ffce00; color: #000; text-decoration: none; border-radius: 6px; font-weight: bold;">下一页 &raquo;</a>
+      {% else %}
+        <span style="padding: 8px 14px; background: #e0e0e0; color: #999; border-radius: 6px; font-weight: bold;">下一页 &raquo;</span>
+      {% endif %}
+
+      <!-- 尾页 -->
+      {% if page < total_pages %}
+        <a href="{{ url_for('index', page=total_pages) }}"
+           style="padding: 8px 14px; background: #ffce00; color: #000; text-decoration: none; border-radius: 6px; font-weight: bold;">尾页</a>
+      {% else %}
+        <span style="padding: 8px 14px; background: #e0e0e0; color: #999; border-radius: 6px; font-weight: bold;">尾页</span>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+</body>
+</html>

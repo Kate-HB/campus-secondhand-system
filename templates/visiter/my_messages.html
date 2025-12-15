@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- 新增：根据是否来自订单显示不同标题 -->
+  <title>
+    {% if is_order_chat %}
+      与 {{ opponent.nickname }} 聊天（订单：{{ order.title }}）
+    {% elif to_user %}
+      与 {{ to_user.nickname }} 的聊天
+    {% else %}
+      消息中心
+    {% endif %} - 湖工大二手
+  </title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <style>
+    /* 你原来的 style 全部保留不变 */
+    .header {
+      position: fixed; top: 0; left: 0; right: 0; height: 60px; background: #ffce00;
+      display: flex; align-items: center; padding: 0 15px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000;
+    }
+    .main { padding-top: 80px; background: #f5f5f5; min-height: 100vh; }
+
+    img.mini-avatar, img.chat-avatar, img.msg-avatar {
+      width: 40px !important;
+      height: 40px !important;
+      border-radius: 50% !important;
+      object-fit: cover !important;
+      flex-shrink: 0 !important;
+    }
+
+    /* 私聊模式 */
+    .chat-container {
+      max-width: 900px; margin: 0 auto;
+      display: flex; flex-direction: column;
+      height: calc(100vh - 80px);
+      background: #fff;
+    }
+    .chat-header {
+      padding: 20px; background: #fff; border-bottom: 1px solid #eee;
+      display: flex; align-items: center; gap: 15px; position: relative;
+    }
+    .chat-header .back-btn {
+      font-size: 28px; color: #333; text-decoration: none; cursor: pointer;
+    }
+    .chat-header .order-btn {
+      margin-left: auto;
+      background: #ffce00; color: #000; padding: 8px 16px; border-radius: 30px;
+      font-weight: bold; font-size: 14px; text-decoration: none;
+    }
+
+    .chat-body {
+      flex: 1; overflow-y: auto; padding: 20px;
+      background: #f9f9f9; -webkit-overflow-scrolling: touch;
+    }
+
+    .chat-input {
+      padding: 10px 15px; background: #fff; border-top: 1px solid #eee;
+      display: flex; gap: 12px; align-items: center; flex-shrink: 0;
+    }
+    .chat-input input {
+      flex: 1; min-width: 0; padding: 14px 18px; height: 48px;
+      border-radius: 24px; border: 1px solid #ddd; background: #f9f9f9;
+      font-size: 16px; outline: none; box-sizing: border-box; transition: all 0.2s;
+    }
+    .chat-input input:focus {
+      border-color: #667eea; background: #fff;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+    }
+    .chat-input button {
+      flex-shrink: 0; width: 80px; height: 48px; padding: 0;
+      background: #667eea; color: white; border: none; border-radius: 24px;
+      font-weight: bold; font-size: 16px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s;
+    }
+    .chat-input button:hover { background: #5a6fd8; }
+    .chat-input button:active { background: #4e5ec5; }
+
+    /* 消息列表模式 */
+    .msg-list-container { max-width: 900px; margin: 0 auto; padding: 20px; }
+    .msg-item {
+      background: white; margin: 12px 0; padding: 18px; border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08); display: flex; gap: 15px; position: relative;
+    }
+    .msg-content { flex: 1; }
+    .msg-title { font-weight: bold; font-size: 17px; margin-bottom: 6px; }
+    .msg-text { color: #333; line-height: 1.5; margin-bottom: 8px; }
+    .msg-meta { color: #999; font-size: 13px; display: flex; justify-content: space-between; }
+    .unread-dot { position: absolute; top: 18px; left: 8px; width: 10px; height: 10px; background: #e74c3c; border-radius: 50%; }
+    .chat-msg { border-left: 4px solid #667eea; padding-left: 12px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">
+      <h1>
+        {% if is_order_chat %}
+          与 {{ opponent.nickname }} 的聊天
+        {% elif to_user %}
+          与 {{ to_user.nickname }} 的聊天
+        {% else %}
+          消息中心
+        {% endif %}
+      </h1>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:12px;padding-right:15px;">
+      <a href="/my" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:#000;">
+        <img src="{{ user.avatar or '/static/avatars/default.jpg' }}" class="mini-avatar">
+        <span style="font-weight:bold;font-size:16px;">{{ user.nickname }}</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="main">
+    {% if opponent or to_user %}
+      <!-- 私聊模式（无论是从订单进来还是从消息列表进来） -->
+      <div class="chat-container">
+        <div class="chat-header">
+          <!-- 返回箭头 -->
+          <a href="javascript:history.back()" class="back-btn">←</a>
+
+          <!-- 对方头像和信息 -->
+          <img src="{{ (opponent.avatar if opponent else to_user.avatar) or '/static/avatars/default.jpg' }}" class="chat-avatar">
+          <div>
+            <div style="font-weight:bold;font-size:18px;">
+              {{ (opponent.nickname if opponent else to_user.nickname) }}
+            </div>
+            <!-- 只有从订单进来才显示商品信息 -->
+            {% if is_order_chat %}
+              <div style="font-size:14px;color:#666;margin-top:4px;">
+                交易商品：{{ order.title }}（¥{{ "%.2f"|format(order.total_amount) }}）
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- 从订单进来时显示“查看订单”按钮 -->
+          {% if is_order_chat %}
+            <a href="/order/{{ order.order_no }}" class="order-btn">查看订单</a>
+          {% endif %}
+        </div>
+
+        <div class="chat-body" id="chat-body">
+          <!-- 消息动态插入 -->
+        </div>
+
+        <div class="chat-input">
+          <input type="text" placeholder="输入消息，按回车发送..." autocomplete="off">
+          <button>发送</button>
+        </div>
+      </div>
+
+    {% else %}
+      <!-- 消息列表模式 -->
+      <div class="msg-list-container">
+        <div id="msg-list"></div>
+      </div>
+    {% endif %}
+  </div>
+
+  <script>
+    const currentUserId = {{ user.user_id }};
+    const opponentId = {{ (opponent.user_id if opponent else to_user.user_id if to_user else 0) }};
+
+    // 私聊模式 JS（统一处理 opponent 和 to_user 两种情况）
+    {% if opponent or to_user %}
+      let messages = [];
+
+      async function loadChatHistory() {
+        if (!opponentId) return;
+        try {
+          const res = await fetch(`/api/message/chat?to_user_id=${opponentId}`);
+          const d = await res.json();
+          if (d.code === 200) {
+            messages = d.data;
+            renderMessages();
+          }
+        } catch (err) {
+          console.error('加载聊天记录失败', err);
+        }
+      }
+
+      function renderMessages() {
+        const body = document.getElementById('chat-body');
+        if (!body) return;
+        body.innerHTML = '';
+        messages.forEach(msg => {
+          const bubble = document.createElement('div');
+          bubble.style.margin = '15px 10px';
+          bubble.style.display = 'flex';
+          bubble.style.alignItems = 'flex-end';
+          bubble.style.gap = '10px';
+
+          if (msg.is_me) {
+            bubble.style.justifyContent = 'flex-end';
+            bubble.innerHTML = `
+              <div style="max-width:70%;background:#667eea;color:white;padding:12px 16px;border-radius:18px 18px 4px 18px;word-break:break-all;">
+                ${msg.content.replace(/\n/g, '<br>')}
+                <div style="font-size:11px;opacity:0.8;margin-top:6px;text-align:right;">${msg.created_at}</div>
+              </div>
+            `;
+          } else {
+            bubble.innerHTML = `
+              <img src="${msg.from_avatar || '/static/avatars/default.jpg'}" class="mini-avatar">
+              <div style="max-width:70%;background:#f0f0f0;padding:12px 16px;border-radius:18px 18px 18px 4px;word-break:break-all;">
+                <div style="font-weight:bold;font-size:14px;margin-bottom:4px;color:#667eea;">${msg.from_nickname}</div>
+                ${msg.content.replace(/\n/g, '<br>')}
+                <div style="font-size:11px;color:#999;margin-top:6px;">${msg.created_at}</div>
+              </div>
+            `;
+          }
+          body.appendChild(bubble);
+        });
+        body.scrollTop = body.scrollHeight;
+      }
+
+      document.querySelector('.chat-input button').onclick = async () => {
+        const input = document.querySelector('.chat-input input');
+        const content = input.value.trim();
+        if (!content || !opponentId) return;
+
+        try {
+          const res = await fetch('/api/message/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to_user_id: opponentId,
+              content: content
+            })
+          });
+          const d = await res.json();
+          if (d.code === 200) {
+            input.value = '';
+            messages.push(d.data);
+            renderMessages();
+          } else {
+            alert(d.msg || '发送失败');
+          }
+        } catch (err) {
+          alert('网络错误');
+        }
+      };
+
+      document.querySelector('.chat-input input').addEventListener('keypress', e => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          document.querySelector('.chat-input button').click();
+        }
+      });
+
+      loadChatHistory();
+      setInterval(loadChatHistory, 5000);
+
+    {% else %}
+      // 消息列表模式（保持不变）
+      async function loadMessages() {
+        try {
+          const res = await fetch('/api/message/list');
+          const d = await res.json();
+          if (d.code !== 200) return;
+
+          const container = document.getElementById('msg-list');
+          container.innerHTML = d.data.length === 0 
+            ? '<div style="text-align:center;padding:100px;color:#999;font-size:18px;">暂无消息~</div>'
+            : '';
+
+          d.data.forEach(conv => {
+  const div = document.createElement('div');
+  div.className = `msg-item chat-msg ${conv.unread_count > 0 ? 'unread' : ''}`;
+
+  // 系统消息特殊处理
+  if (conv.opponent_id === 0) {
+    div.innerHTML = `
+      ${conv.unread_count > 0 ? '<div class="unread-dot"></div>' : ''}
+      <img src="/static/avatars/system.jpg" class="msg-avatar">
+      <div class="msg-content">
+        <div class="msg-title" style="color:#f39c12; font-weight:bold; font-size:18px;">
+          🔔 ${conv.opponent_nick || '系统通知'}
+        </div>
+        <div class="msg-text" style="background:#fffbe6; padding:12px; border-radius:12px; border-left:4px solid #f39c12; margin-top:8px;">
+          ${conv.last_message || '无内容'}
+        </div>
+        <div class="msg-meta">
+          <span>${conv.last_time || ''}</span>
+          ${conv.unread_count > 0 ? `<span style="color:#e74c3c;">${conv.unread_count}条未读</span>` : ''}
+        </div>
+      </div>
+    `;
+    div.style.cursor = 'default'; // 系统消息不跳转
+  } else {
+    // 普通聊天消息
+    div.innerHTML = `
+      ${conv.unread_count > 0 ? '<div class="unread-dot"></div>' : ''}
+      <img src="${conv.opponent_avatar || '/static/avatars/default.jpg'}" class="msg-avatar">
+      <div class="msg-content">
+        <div class="msg-title">${conv.opponent_nick || '未知用户'}</div>
+        <div class="msg-text">${conv.last_message || '暂无消息'}</div>
+        <div class="msg-meta">
+          <span>${conv.last_time || ''}</span>
+          ${conv.unread_count > 0 ? `<span style="color:#e74c3c;">${conv.unread_count}条未读</span>` : ''}
+        </div>
+      </div>
+    `;
+    div.onclick = () => {
+  // 标记系统消息已读
+  fetch('/api/message/mark_read', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({})  // 标记所有
+  }).then(() => loadMessages());
+};
+  }
+
+  container.appendChild(div);
+});
+        } catch (err) {
+          console.error('加载消息列表失败', err);
+        }
+      }
+
+      loadMessages();
+      setInterval(loadMessages, 10000);
+    {% endif %}
+  </script>
+</body>
+</html>

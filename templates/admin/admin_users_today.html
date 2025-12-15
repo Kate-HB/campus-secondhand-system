@@ -1,0 +1,73 @@
+{% extends "admin/admin_layout.html" %}
+{% block title %}今日注册用户{% endblock %}
+{% block content %}
+<div class="card">
+  <h2 style="margin-top:0; color:#333; font-size:24px;">
+    今日注册用户
+    <small style="font-size:16px; color:#666; margin-left:20px;">
+      {{ today_date }} · 共 {{ pagination.total }} 人
+    </small>
+  </h2>
+
+  <div class="search-bar">
+    <form method="get">
+      <input type="text" name="keyword" placeholder="搜索昵称、账号、学号、邮箱..." value="{{ keyword or '' }}" style="width:400px;">
+      <button type="submit" class="btn btn-success">搜索</button>
+    </form>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>头像</th>
+        <th>昵称</th>
+        <th>账号</th>
+        <th>学号</th>
+        <th>邮箱</th>
+        <th>注册时间</th>
+        <th>状态</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td>
+          <img src="{{ u.avatar or '/static/avatars/default.jpg' }}" style="width:40px;height:40px;border-radius:50%;">
+        </td>
+        <td>{{ u.nickname }}</td>
+        <td>{{ u.account }}</td>
+        <td>{{ u.stu_id or '未认证' }}</td>
+        <td>{{ u.email or '未填写' }}</td>
+        <td>{{ u.reg_time | strftime('%H:%M:%S') }}</td>
+        <td>
+          <span style="padding:4px 10px; border-radius:20px; font-size:13px; font-weight:bold;
+                       background:{{ '#27ae60' if u.status == 1 else '#e74c3c' }}; color:white;">
+            {{ '正常' if u.status == 1 else '禁用' }}
+          </span>
+        </td>
+        <td>
+          <a href="/admin/user/edit/{{ u.user_id }}" class="btn btn-small">编辑</a>
+          <a href="/user/{{ u.user_id }}" target="_blank" class="btn btn-small">查看</a>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" style="text-align:center; color:#999; padding:60px;">今日暂无新用户注册</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- 分页 -->
+  {% if pagination.pages > 1 %}
+  <div style="text-align:center; margin-top:40px;">
+    {% if pagination.has_prev %}
+    <a href="?page={{ pagination.prev_num }}&keyword={{ keyword or '' }}" class="btn">上一页</a>
+    {% endif %}
+    <span style="margin:0 30px; font-size:16px;">第 {{ pagination.page }} / {{ pagination.pages }} 页</span>
+    {% if pagination.has_next %}
+    <a href="?page={{ pagination.next_num }}&keyword={{ keyword or '' }}" class="btn">下一页</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

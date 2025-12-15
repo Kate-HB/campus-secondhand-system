@@ -1,0 +1,192 @@
+/*
+ * =============================================================
+ * 校园二手交易系统 - 全局样式表 (style.css)
+ * 作者：你
+ * 功能：定义整个网站的通用样式、布局、动画和组件外观
+ * =============================================================
+ */
+
+/* ———————————————————————————————— */
+/* 系统主标题样式：用于首页、登录页等顶部大字 */
+/* ———————————————————————————————— */
+.system-title {
+  text-align: center;                    /* 文字水平居中 */
+  font-size: 40px;                       /* 超大字号，突出系统名称 */
+  font-weight: bold;                     /* 加粗显示 */
+  color: #39ff14;                        /* 主色：亮绿色（荧光绿） */
+  /* 三层文字阴影，模拟“发光”效果 */
+  text-shadow: 
+    0 0 10px #39ff14,                    /* 内层光晕 */
+    0 0 20px #39ff14,                    /* 中层光晕 */
+    0 0 30px #39ff14;                    /* 外层光晕 */
+  margin: 20px 0 35px;                   /* 上边距20px，下边距35px，留出呼吸空间 */
+  letter-spacing: 8px;                   /* 字母间距拉宽，增强视觉冲击力 */
+  /* 绑定名为 'glow' 的动画，实现闪烁发光效果 */
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+/* 定义 'glow' 动画的关键帧 */
+@keyframes glow {
+  from { 
+    /* 动画开始：只有较小的光晕 */
+    text-shadow: 0 0 10px #39ff14; 
+  }
+  to { 
+    /* 动画结束：扩大光晕，并增加一层更外层的辉光 */
+    text-shadow: 0 0 30px #39ff14, 0 0 40px #39ff14; 
+  }
+}
+
+/* .system-title 内部的 <small> 标签样式（通常用于英文副标题） */
+.system-title small {
+  color: #a0ff9d;                        /* 浅绿色，比主标题柔和 */
+  font-size: 16px;                       /* 小字号，作为补充信息 */
+}
+
+/* ———————————————————————————————— */
+/* 全局重置与基础设置 */
+/* ———————————————————————————————— */
+/* 通配符选择器：重置所有元素的默认内外边距，并使用 border-box 盒模型 */
+* { 
+  margin: 0;                             /* 清除所有元素默认外边距 */
+  padding: 0;                            /* 清除所有元素默认内边距 */
+  box-sizing: border-box;                /* 设置盒模型为 border-box，使 width/height 包含 padding 和 border */
+}
+
+body { 
+  font-family: "Microsoft YaHei", sans-serif;
+  background: #f5f5f5;                    /* 改用首页的浅灰背景 */
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  /* 完全删除 display: flex; align-items; justify-content; 这三行！ */
+}
+
+/* ———————————————————————————————— */
+/* 通用容器：限制内容宽度，适配移动端 */
+/* ———————————————————————————————— */
+.container { 
+  width: 90%;                            /* 宽度占父容器的90%，在小屏幕上自动缩放 */
+  max-width: 500px;                      /* 最大宽度不超过500px，防止在大屏上过宽 */
+}
+
+/* ———————————————————————————————— */
+/* 卡片组件：用于登录框、注册框、个人中心等 */
+/* ———————————————————————————————— */
+.card { 
+  background: white;                     /* 白色背景，与彩色背景形成对比 */
+  border-radius: 16px;                   /* 圆角16px，柔和美观 */
+  padding: 30px;                         /* 内边距30px，内容不贴边 */
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3); /* 阴影：模拟立体浮起效果 */
+  margin-bottom: 20px;                   /* 底部留白，与其他元素分隔 */
+}
+
+/* ———————————————————————————————— */
+/* 标题样式 */
+/* ———————————————————————————————— */
+h2, h3 { 
+  text-align: center;                    /* 居中对齐 */
+  color: #333;                           /* 深灰色文字，易读性好 */
+  margin-bottom: 20px;                   /* 下方留白，与后续内容分离 */
+}
+
+/* ———————————————————————————————— */
+/* 输入框统一样式 */
+/* ———————————————————————————————— */
+input[type=text], input[type=password], input[type=email] {
+  width: 100%;                           /* 宽度占满父容器 */
+  padding: 12px;                         /* 内边距舒适 */
+  margin: 10px 0;                        /* 上下边距10px */
+  border: 1px solid #ddd;                /* 浅灰色边框 */
+  border-radius: 8px;                    /* 圆角8px */
+  font-size: 16px;                       /* 字号16px，适合触摸输入 */
+}
+
+/* ———————————————————————————————— */
+/* 按钮样式 */
+/* ———————————————————————————————— */
+button {
+  width: 100%;                           /* 宽度占满 */
+  padding: 14px;                         /* 内边距稍大，点击区域充足 */
+  background: #667eea;                   /* 主按钮色：紫色 */
+  color: white;                          /* 白色文字 */
+  border: none;                          /* 无边框 */
+  border-radius: 8px;                    /* 圆角 */
+  font-size: 16px;                       /* 字号 */
+  cursor: pointer;                       /* 鼠标悬停时显示手型 */
+  margin: 15px 0;                        /* 上下边距15px */
+}
+
+/* 按钮悬停状态：加深背景色，提供视觉反馈 */
+button:hover { 
+  background: #5a6fd8;                   /* 悬停时颜色略深 */
+}
+
+/* ———————————————————————————————— */
+/* 超链接样式 */
+/* ———————————————————————————————— */
+a { 
+  color: #667eea;                        /* 链接颜色与按钮一致 */
+  text-decoration: none;                 /* 去除下划线，界面更干净 */
+}
+
+/* ———————————————————————————————— */
+/* 用户头像样式 */
+/* ———————————————————————————————— */
+.avatar-img { 
+  width: 100px;                          /* 固定宽度 */
+  height: 100px;                         /* 固定高度 */
+  border-radius: 50%;                    /* 50% 圆角 = 圆形 */
+  object-fit: cover;                     /* 图片裁剪填充，保持比例不拉伸 */
+}
+
+/* ———————————————————————————————— */
+/* 两列信息网格：用于展示用户资料（学院、班级等） */
+/* ———————————————————————————————— */
+.info-grid { 
+  display: grid;                         /* 启用 Grid 布局 */
+  grid-template-columns: 1fr 1fr;        /* 两列等宽 */
+  gap: 15px;                             /* 列间距15px */
+  margin: 20px 0;                        /* 上下边距20px */
+}
+
+/* ———————————————————————————————— */
+/* 统计信息区域：我的发布、订单等 */
+/* ———————————————————————————————— */
+.stats { 
+  display: grid;                         /* Grid 布局 */
+  grid-template-columns: repeat(2, 1fr); /* 重复2列，每列1份空间 */
+  gap: 15px;                             /* 间距15px */
+  text-align: center;                    /* 文字居中 */
+  margin-top: 20px;                      /* 顶部留白 */
+}
+
+/* 每个统计项的容器 */
+.stats div { 
+  background: #f8f9fa;                   /* 浅灰背景 */
+  padding: 15px;                         /* 内边距 */
+  border-radius: 12px;                   /* 圆角 */
+}
+
+/* ———————————————————————————————— */
+/* 首页左右分栏布局（商品列表页面使用） */
+/* ———————————————————————————————— */
+.content-layout {
+  display: flex;                         /* Flex 布局，实现左右并排 */
+  min-height: calc(100vh - 70px);        /* 高度 = 视口高度 - 顶部导航高度（约70px） */
+  padding: 20px 20px 0 20px;            /* 上右下左边距：上下20px，左右20px，底部0 */
+  gap: 24px;                             /* 左右两栏之间的间隙 */
+  overflow: visible;                     /* 允许子元素溢出（防止下拉菜单被裁剪） */
+}
+
+.status-tag {
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  color: white;
+  margin-top: 8px;
+  display: inline-block;
+  font-weight: bold;
+}
+.status-1 { background: #ff9800; }     /* 在售 - 橙色 */
+.status-0 { background: #999; }        /* 下架/售罄 - 灰色 */

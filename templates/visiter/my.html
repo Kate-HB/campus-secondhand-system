@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我的 - 湖工大二手</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <style>
+    .header { position:fixed;top:0;left:0;right:0;height:60px;background:#ffce00;display:flex;align-items:center;padding:0 15px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:1000; }
+    .logo h1 { font-size:32px;color:#000;font-weight:bold;margin:0; }
+    .search-bar { flex:1;margin:0 15px;height:40px;background:white;border-radius:25px;display:flex;align-items:center;padding:0 15px;box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+    .search-bar input { border:none;outline:none;flex:1;font-size:16px; }
+    .user-area a { color:#000;text-decoration:none;margin-left:15px;font-weight:bold; }
+    .mini-avatar { width:36px;height:36px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px; }
+
+    .main { padding-top:80px;display:flex;min-height:calc(100vh-80px);background:#f5f5f5; }
+    .sidebar { width:220px;background:white;box-shadow:2px 0 10px rgba(0,0,0,0.1);padding:20px 0;position:sticky;top:80px;height:calc(100vh-80px);overflow-y:auto; }
+    .side-item { padding:18px 25px;font-size:17px;color:#333;cursor:pointer;transition:all 0.2s;border-left:4px solid transparent;font-weight:bold; }
+    .side-item.active { background:#fffbe6;border-left-color:#ffce00;color:#e67e22; }
+    .side-item:hover:not(.active) { background:#f9f9f9; }
+
+    .content { flex:1;padding:20px; }
+    .sub-tabs { display:none;background:white;box-shadow:0 2px 10px rgba(0,0,0,0.1);margin-bottom:20px;border-radius:12px;overflow:hidden; }
+    .sub-tabs.show { display:flex; }
+    .sub-tab { flex:1;padding:16px;text-align:center;font-weight:bold;color:#666;cursor:pointer;transition:all 0.2s; }
+    .sub-tab.active { background:#ffce00;color:#000; }
+
+    .goods-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:20px; }
+    .goods-card { background:white;border-radius:18px;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,0.12);transition:0.3s;cursor:pointer; }
+    .goods-card:hover { transform:translateY(-8px); }
+    .goods-img { width:100%;height:190px;background:#eee center/cover no-repeat; }
+    }
+    .goods-info { padding:14px; }
+    .goods-title { font-size:15px;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#333;font-weight:bold; }
+    .goods-price { color:#ff5000;font-size:18px;font-weight:bold; }
+    .goods-seller { font-size:13px;color:#999;margin-top:4px; }
+    .actions { display:flex;gap:8px;padding:10px;background:#f9f9f9; }
+    .btn-small { flex:1;padding:8px 0;font-size:13px;border-radius:12px;text-align:center;font-weight:bold; }
+    .btn-edit { background:#4ecdc4;color:white; }
+    .btn-off { background:#ff6b6b;color:white; }
+    .empty { text-align:center;padding:100px 20px;color:#999;font-size:18px; }
+    .status-tag { font-size:12px;padding:2px 8px;border-radius:8px;color:white;margin-top:6px;display:inline-block; }
+    .status-0 { background:#999; }
+    .status-1 { background:#ff9800; }
+    .status-2 { background:#4caf50; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo"><h1>湖工大二手</h1></div>
+    <div class="search-bar"><input type="text" placeholder="搜索你想要的宝贝~" readonly></div>
+    <div class="user-area">
+      <a href="/profile"><img src="{{ user.avatar or '/static/avatars/default.jpg' }}" class="mini-avatar">{{ user.nickname }}</a>
+      <a href="/logout">退出</a>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="sidebar">
+      <div class="side-item active" data-type="publish">我的发布</div>
+      <div class="side-item" data-type="wish">我的想买</div>
+      <div class="side-item" data-type="favor">我的收藏</div>
+      <div class="side-item" data-type="order">我的订单</div>
+    </div>
+
+    <div class="content">
+      <div class="sub-tabs" id="order-sub-tabs">
+        <div class="sub-tab active" data-status="all">全部</div>
+        <div class="sub-tab" data-status="0">待支付</div>
+        <div class="sub-tab" data-status="1">待收货</div>
+        <div class="sub-tab" data-status="2">已完成</div>
+      </div>
+
+      <div id="goods-container" class="goods-grid">
+        <div class="empty">加载中...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CURRENT_USER_ID = {{ user.user_id }};
+    const sideItems = document.querySelectorAll('.side-item');
+    const subTabs = document.getElementById('order-sub-tabs');
+    const subTabItems = subTabs.querySelectorAll('.sub-tab');
+    const container = document.getElementById('goods-container');
+    let currentType = 'publish';
+    let currentStatus = 'all';
+
+    sideItems.forEach(item => {
+      item.onclick = () => {
+        sideItems.forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+        currentType = item.dataset.type;
+        currentStatus = 'all';
+        subTabs.classList.toggle('show', currentType === 'order');
+        if (currentType === 'order') {
+          subTabItems.forEach(t => t.classList.remove('active'));
+          subTabItems[0].classList.add('active');
+        }
+        loadData();
+      };
+    });
+
+    subTabItems.forEach(tab => {
+      tab.onclick = () => {
+        subTabItems.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentStatus = tab.dataset.status;
+        loadData();
+      };
+    });
+
+    async function loadData() {
+  container.innerHTML = '<div class="empty">加载中...</div>';
+  let url = `/api/my/${currentType}`;
+  if (currentType === 'order') url += `?status=${currentStatus}`;
+  
+  const res = await fetch(url);
+  const json = await res.json();
+  const data = json.data || [];
+
+  if (data.length === 0) {
+    container.innerHTML = '<div class="empty">暂无内容~</div>';
+    return;
+  }
+
+  container.innerHTML = data.map(item => `
+    <div class="goods-card" onclick="location.href='${
+      currentType==='order' ? '/order/'+item.order_no : '/goods/'+item.goods_id
+    }'">
+      <div class="goods-img" style="background-image:url('${item.cover_img || '/static/avatars/goodspictures/default.jpg'}')"></div>
+            <div class="goods-info">
+        <div class="goods-title">${item.title}</div>
+        <div class="goods-price">¥ ${
+          currentType==='order' ? Number(item.total_amount).toFixed(2) : Number(item.price).toFixed(2)
+        }</div>
+
+        <!-- 新增：状态角标（支持在售 / 已售罄 / 已下架） -->
+        ${currentType !== 'order' ? `
+          <div class="status-tag ${item.status == 1 ? 'status-1' : 'status-0'}">
+            ${item.status == 1 ? '在售' : (item.status == 2 ? '已售罄' : '已下架')}
+          </div>
+        ` : ''}
+
+        ${currentType === 'order' ? `
+          <div class="goods-seller">订单号：${item.order_no}</div>
+          <div class="goods-seller">${item.buyer_id == CURRENT_USER_ID ? '卖家：'+item.seller_nick : '买家：'+item.buyer_nick}</div>
+          <div class="status-tag status-${item.pay_status}">
+            ${['待支付','已支付','已完成'][item.pay_status] || '未知'}
+          </div>
+        ` : ''}
+      </div>
+      ${currentType === 'publish' ? `
+        <div class="actions">
+          <div class="btn-small btn-edit" onclick="event.stopPropagation();location.href='/publish?edit=${item.goods_id}'">编辑</div>
+          <div class="btn-small btn-off" onclick="event.stopPropagation();offGoods(${item.goods_id},${item.status==1?1:0})">
+            ${item.status==1?'下架':'上架'}
+          </div>
+        </div>
+      ` : ''}
+    </div>
+  `).join('');
+    }
+
+    async function offGoods(id, cur) {
+      if (!confirm(cur===1?'确定下架？':'确定上架？')) return;
+      await fetch('/api/goods/off', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({goods_id: id, status: cur===1?0:1})
+      });
+      loadData();
+    }
+
+    // 支持支付成功后跳转回来直接打开订单页
+    const params = new URLSearchParams(location.search);
+    if (params.get('type') === 'order') {
+      document.querySelector(`.side-item[data-type="order"]`).click();
+      const st = params.get('status');
+      if (st) document.querySelector(`.sub-tab[data-status="${st}"]`)?.click();
+    } else {
+      loadData(); // 默认加载“我的发布”
+    }
+  </script>
+</body>
+</html>

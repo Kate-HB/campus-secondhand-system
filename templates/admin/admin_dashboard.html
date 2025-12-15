@@ -1,0 +1,88 @@
+{% extends "admin/admin_layout.html" %}
+{% block title %}数据看板{% endblock %}
+{% block content %}
+<div class="card">
+  <h2 style="margin-top:0; color:#333; font-size:24px; border-bottom:2px solid #1890ff; padding-bottom:10px;">
+    数据统计看板
+  </h2>
+
+  <div style="display:grid; 
+              grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); 
+              gap:24px; 
+              margin-top:30px;">
+
+    <!-- 1. 总交易额 (GMV) -->
+    <div onclick="location.href='/admin/stats/gmv'" style="cursor:pointer; transition:0.3s; box-shadow:0 8px 20px rgba(102,126,234,0.2);" 
+         onmouseover="this.style.transform='translateY(-8px)'" onmouseout="this.style.transform='translateY(0)'">
+      <div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:white; padding:28px; border-radius:16px; text-align:center;">
+        <div style="font-size:48px; font-weight:bold;">¥ {{ "%.2f"|format(stats.total_gmv) }}</div>
+        <div style="font-size:18px; margin-top:12px; opacity:0.9;">总交易额 (GMV)</div>
+      </div>
+    </div>
+
+    <!-- 2. 今日交易额 -->
+    <div onclick="location.href='/admin/stats/today_gmv'" style="cursor:pointer; transition:0.3s; box-shadow:0 8px 20px rgba(245,87,108,0.2);"
+         onmouseover="this.style.transform='translateY(-8px)'" onmouseout="this.style.transform='translateY(0)'">
+      <div style="background:linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color:white; padding:28px; border-radius:16px; text-align:center;">
+        <div style="font-size:48px; font-weight:bold;">¥ {{ "%.2f"|format(stats.today_gmv) }}</div>
+        <div style="font-size:18px; margin-top:12px; opacity:0.9;">今日交易额</div>
+      </div>
+    </div>
+
+    <!-- 3. 总订单数 -->
+<div onclick="location.href='/admin/orders'" style="cursor:pointer; transition:0.3s; box-shadow:0 8px 20px rgba(79,172,254,0.2);"
+     onmouseover="this.style.transform='translateY(-8px)'" onmouseout="this.style.transform='translateY(0)'">
+  <div style="background:linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color:white; padding:28px; border-radius:16px; text-align:center;">
+    <div style="font-size:48px; font-weight:bold;">{{ stats.total_orders }}</div>
+    <div style="font-size:18px; margin-top:12px; opacity:0.9;">总订单数</div>
+  </div>
+</div>
+
+    <!-- 4. 今日订单 -->
+<div onclick="location.href='/admin/orders/today'" style="cursor:pointer; transition:0.3s; box-shadow:0 8px 20px rgba(67,233,123,0.2);"
+     onmouseover="this.style.transform='translateY(-8px)'" onmouseout="this.style.transform='translateY(0)'">
+  <div style="background:linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color:white; padding:28px; border-radius:16px; text-align:center;">
+    <div style="font-size:48px; font-weight:bold;">{{ stats.today_orders }}</div>
+    <div style="font-size:18px; margin-top:12px; opacity:0.9;">今日订单</div>
+  </div>
+</div>
+
+    <!-- 5. 总用户数 -->
+<div onclick="location.href='/admin/users'" style="cursor:pointer; transition:0.3s; box-shadow:0 8px 20px rgba(250,112,154,0.2);"
+     onmouseover="this.style.transform='translateY(-8px)'" onmouseout="this.style.transform='translateY(0)'">
+  <div style="background:linear-gradient(135deg, #fa709a 0%, #fee140 100%); color:white; padding:28px; border-radius:16px; text-align:center;">
+    <div style="font-size:48px; font-weight:bold;">{{ stats.total_users }}</div>
+    <div style="font-size:18px; margin-top:12px; opacity:0.9;">总用户数</div>
+  </div>
+</div>
+
+    <!-- 6. 今日注册 -->
+<div onclick="location.href='/admin/users/today'" style="cursor:pointer; transition:0.3s; box-shadow:0 8px 20px rgba(48,207,208,0.2);"
+     onmouseover="this.style.transform='translateY(-8px)'" onmouseout="this.style.transform='translateY(0)'">
+  <div style="background:linear-gradient(135deg, #30cfd0 0%, #330867 100%); color:white; padding:28px; border-radius:16px; text-align:center;">
+    <div style="font-size:48px; font-weight:bold;">{{ stats.today_reg }}</div>
+    <div style="font-size:18px; margin-top:12px; opacity:0.9;">今日注册</div>
+  </div>
+</div>
+
+    <!-- 7. 毕业生清仓商品数 -->
+<div onclick="location.href='/admin/batch_goods'" style="cursor:pointer; transition:0.3s; box-shadow:0 8px 20px rgba(168,237,234,0.3);"
+     onmouseover="this.style.transform='translateY(-8px)'" onmouseout="this.style.transform='translateY(0)'">
+  <div style="background:linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); color:#333; padding:28px; border-radius:16px; text-align:center;">
+    <div style="font-size:48px; font-weight:bold; color:#722ed1;">{{ stats.batch_goods }}</div>
+    <div style="font-size:18px; margin-top:12px; color:#555;">毕业生清仓商品数</div>
+  </div>
+</div>                                                            
+
+    <!-- 8. 待处理举报 -->
+    <div onclick="location.href='/admin/reports'" style="cursor:pointer; transition:0.3s; box-shadow:0 8px 20px rgba(255,154,158,0.3);"
+         onmouseover="this.style.transform='translateY(-8px)'" onmouseout="this.style.transform='translateY(0)'">
+      <div style="background:linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); color:white; padding:28px; border-radius:16px; text-align:center;">
+        <div style="font-size:48px; font-weight:bold; color:#e74c3c;">{{ stats.pending_reports }}</div>
+        <div style="font-size:18px; margin-top:12px; opacity:0.9;">待处理举报</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

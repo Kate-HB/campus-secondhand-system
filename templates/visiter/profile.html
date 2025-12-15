@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>个人中心 - 校园二手交易系统</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+
+  <!-- 关键：和登录页完全一样的紫蓝渐变 + 居中布局 -->
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px 0; /* 给手机留一点上下边距 */
+    }
+    .container {
+      width: 90%;
+      max-width: 500px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- 发光大标题 -->
+  <h1 class="system-title">
+    校园二手交易系统
+    <small>Campus Secondhand Market</small>
+  </h1>
+
+  <!-- 返回首页按钮 -->
+  <div style="text-align: center; margin: 20px 0;">
+    <a href="/" style="
+      display: inline-block;
+      padding: 10px 24px;
+      background: #ffce00;
+      color: #000;
+      text-decoration: none;
+      border-radius: 30px;
+      font-weight: bold;
+      font-size: 16px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+    " onmouseover="this.style.transform='scale(1.05)'" 
+       onmouseout="this.style.transform='scale(1)'">
+      ← 返回首页
+    </a>
+  </div>
+
+  <!-- 你原来的超级漂亮卡片，全部保留！ -->
+  <div class="card">
+    <div class="profile-header">
+      <img id="avatar-img" src="{{ user.avatar or '/static/avatars/default.jpg' }}" alt="头像" class="avatar-img">
+      <div style="margin-top:10px">
+        <button onclick="document.getElementById('avatar-input').click()" class="small-btn">更换头像</button>
+        <input type="file" id="avatar-input" style="display:none" accept="image/*">
+      </div>
+      <h2 contenteditable="true" id="nickname" onblur="updateField('nickname', this.innerText)">{{ user.nickname }}</h2>
+      <small>账号：{{ user.account }}</small><br>
+      <a href="/logout" style="color:#999;font-size:14px">退出登录</a>
+    </div>
+
+    <div class="info-grid">
+      <div><strong>学号：</strong> <span id="stu_id">{{ user.stu_id or '未认证' }}</span></div>
+      <div><strong>应届毕业生：</strong> 
+        {% if user.is_graduating %}<span style="color:green">是（可发布清仓）</span>{% else %}<span style="color:#999">否</span>{% endif %}
+      </div>
+      <div><strong>学院：</strong> 
+        <span id="college" contenteditable="true" onblur="updateField('college', this.innerText)">{{ user.college or '点击填写' }}</span>
+      </div>
+      <div><strong>班级：</strong> 
+        <span id="class_name" contenteditable="true" onblur="updateField('class_name', this.innerText)">{{ user.class_name or '点击填写' }}</span>
+      </div>
+      <div><strong>性别：</strong>
+        <select id="gender" onchange="updateField('gender', this.value)">
+          <option value="0" {% if user.gender == 0 %}selected{% endif %}>未填写</option>
+          <option value="1" {% if user.gender == 1 %}selected{% endif %}>男</option>
+          <option value="2" {% if user.gender == 2 %}selected{% endif %}>女</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="stats">
+  <a href="/my" style="text-decoration:none;color:inherit;"><div>我的发布 <strong>{{ stats.goods }}</strong> 件</div></a>
+  <a href="/my" style="text-decoration:none;color:inherit;"><div>我的收藏 <strong>{{ stats.favors }}</strong> 件</div></a>
+  <a href="/my" style="text-decoration:none;color:inherit;"><div>我的想买 <strong>{{ stats.wishes }}</strong> 件</div></a>
+  <a href="/my" style="text-decoration:none;color:inherit;"><div>我的订单 <strong>{{ stats.orders }}</strong> 单</div></a>
+  </div>
+
+    {% if not user.stu_id %}
+    <div class="card" style="margin-top:20px; border:2px dashed #667eea">
+      <h3 style="color:#667eea">学籍认证（仅需一次）</h3>
+      <input type="text" id="stu_id_input" placeholder="输入你的学号（如 20230001）" style="margin:10px 0">
+      <label style="display:block;margin:10px 0">
+        <input type="checkbox" id="is_graduating"> 我是应届毕业生
+      </label>
+      <button onclick="authStudent()" style="background:#f57c00">提交认证</button>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script src="/static/js/main.js"></script>
+<script>
+// 原始值缓存
+const originalValues = {
+  nickname: "{{ user.nickname }}",
+  college: "{{ user.college or '' }}",
+  class_name: "{{ user.class_name or '' }}",
+  gender: "{{ user.gender }}"
+};
+
+async function updateField(field, newValue) {
+  newValue = newValue.trim();
+  if (newValue === originalValues[field].trim()) return;
+
+  try {
+    const res = await fetch('/api/profile/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ [field]: newValue || null })
+    });
+    const data = await res.json();
+    if (data.code === 200) {
+      originalValues[field] = newValue;
+      alert('保存成功！');
+    } else {
+      alert('保存失败：' + data.msg);
+    }
+  } catch (err) {
+    alert('网络错误');
+  }
+}
+</script>
+</body>
+</html>

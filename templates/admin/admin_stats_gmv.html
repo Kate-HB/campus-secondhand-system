@@ -1,0 +1,50 @@
+{% extends "admin/admin_layout.html" %}
+{% block title %}交易额详情{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>总交易额详情分析</h2>
+  
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:30px; margin-top:30px;">
+    <div>
+      <h3>分类销售额占比</h3>
+      <canvas id="pieChart" height="300"></canvas>
+    </div>
+    <div>
+      <h3>近30天每日交易额</h3>
+      <canvas id="lineChart" height="300"></canvas>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // 饼图
+  new Chart(document.getElementById('pieChart'), {
+    type: 'pie',
+    data: {
+      labels: [{% for c in cate_sales %}'{{ c.name }}',{% endfor %}],
+      datasets: [{
+        data: [{% for c in cate_sales %}{{ c.sales }},{% endfor %}],
+        backgroundColor: ['#667eea','#f093fb','#f5576c','#4facfe','#43e97b','#fa709a','#30cfd0','#ff9a9e']
+      }]
+    },
+    options: { responsive: true }
+  });
+
+  // 折线图
+  new Chart(document.getElementById('lineChart'), {
+    type: 'line',
+    data: {
+      labels: [{% for d in daily_sales %}'{{ d.date.strftime('%m-%d') }}',{% endfor %}],
+      datasets: [{
+        label: '交易额',
+        data: [{% for d in daily_sales %}{{ d.amount }},{% endfor %}],
+        borderColor: '#667eea',
+        backgroundColor: 'rgba(102,126,234,0.1)',
+        tension: 0.4
+      }]
+    },
+    options: { responsive: true }
+  });
+</script>
+{% endblock %}
