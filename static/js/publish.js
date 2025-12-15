@@ -54,7 +54,15 @@ function renderPreview() {
 async function publishGoods() {
   const title = document.getElementById('title').value.trim();
   const price = document.getElementById('price').value;
-  if (!title || !price || images.length === 0) return alert('请填写标题、价格并上传图片');
+  // 修改这里：去掉 images.length === 0 的强制要求
+  if (!title || !price) return alert('请填写标题、价格并上传图片');
+
+  // 如果一张图片都没上传，给个友好提示，但不阻止发布
+  if (images.length === 0) {
+    if (!confirm('您还没有上传商品图片，确定要发布吗？\n（无图商品吸引力会降低哦~）')) {
+      return;  // 用户取消，就不继续发布
+    }
+  }
 
   const form = new FormData();
   form.append('title', title);
