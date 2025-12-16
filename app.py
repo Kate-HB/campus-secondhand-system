@@ -437,29 +437,40 @@ def auth_student():
 
 @app.route('/api/upload/avatar', methods=['POST'])
 @login_required
-def upload_avatar():
-    """头像上传接口"""
-    if 'file' not in request.files:
-        return jsonify(code=400, msg='未选择文件')
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify(code=400, msg='未选择文件')
+def api_upload_avatar():
+    try:
+        if 'file' not in request.files:
+            return jsonify(code=400, msg='未选择文件')
 
-    # 只允许常见图片格式
-    ext = file.filename.rsplit('.', 1)[1].lower()
-    if ext not in {'png', 'jpg', 'jpeg', 'gif'}:
-        return jsonify(code=400, msg='仅支持图片格式')
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify(code=400, msg='未选择文件')
 
-    # 使用 user_id + 时间戳 生成唯一文件名，防止覆盖
-    filename = f"{session['user_id']}_{int(datetime.datetime.now().timestamp())}.{ext}"
-    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    file.save(filepath)
+        # 安全获取扩展名
+        ext = os.path.splitext(file.filename)[1].lower()
+        if ext not in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
+            return jsonify(code=400, msg='不支持的文件格式')
 
-    # 更新用户表中的头像字段
-    user = User.query.get(session['user_id'])
-    user.avatar = f"/static/avatars/userspictures/{filename}"
-    db.session.commit()
-    return jsonify(code=200, url=user.avatar, msg='上传成功')
+        # 生成新文件名：user_id + 时间戳 或 随机字符串
+        filename = f"{session['user_id']}_{int(datetime.datetime.now().timestamp())}{ext}"
+        upload_folder = app.config['UPLOAD_FOLDER']  # static/avatars/userspictures/
+        filepath = os.path.join(upload_folder, filename)
+
+        file.save(filepath)
+
+        # 更新数据库中的 avatar 字段为新路径
+        new_avatar_url = f"/static/avatars/userspictures/{filename}"
+
+        user = User.query.get(session['user_id'])
+        user.avatar = new_avatar_url
+        db.session.commit()
+
+        return jsonify(code=200, msg='上传成功', url=new_avatar_url)
+
+    except Exception as e:
+        db.session.rollback()
+        print("【头像上传失败】", str(e))
+        return jsonify(code=500, msg='上传失败，请重试')
 
 
 @app.route('/api/profile/update', methods=['POST'])
@@ -617,52 +628,98 @@ def publish_page():
 @app.route('/api/goods/publish', methods=['POST'])
 @login_required
 def api_publish_goods():
-    """商品发布核心接口（支持多图上传）"""
+    """商品发布接口 - 支持无图发布（自动使用默认封面）"""
     try:
-        title = request.form['title']
-        price = float(request.form['price'])
-        cate_id = int(request.form['cate_id'])
-        degree = int(request.form['degree'])
-        description = request.form.get('description', '')
+        # 获取并校验必填字段
+        title = request.form.get('title', '').strip()
+        price_str = request.form.get('price')
+        cate_id_str = request.form.get('cate_id')
+
+        if not title:
+            return jsonify(code=400, msg='商品标题不能为空')
+        if not price_str:
+            return jsonify(code=400, msg='价格不能为空')
+        if not cate_id_str:
+            return jsonify(code=400, msg='请选择商品分类')
+
+        try:
+            price = float(price_str)
+            if price <= 0:
+                return jsonify(code=400, msg='价格必须大于0')
+            cate_id = int(cate_id_str)
+        except ValueError:
+            return jsonify(code=400, msg='价格或分类格式错误')
+
+        degree = int(request.form.get('degree', 10))
+        description = request.form.get('description', '').strip()
         is_batch = 1 if request.form.get('is_batch') == '1' else 0
 
         # 创建商品记录
         new_goods = goods(
-            title=title, cate_id=cate_id, user_id=session['user_id'],
-            price=price, description=description, degree=degree,
-            stock=1, status=1, is_batch=is_batch
+            title=title,
+            cate_id=cate_id,
+            user_id=session['user_id'],
+            price=price,
+            description=description,
+            degree=degree,
+            stock=1,
+            status=1,              # 上架状态
+            is_batch=is_batch
         )
         db.session.add(new_goods)
-        db.session.flush()  # 获取自增 goods_id
+        db.session.flush()  # 获取 goods_id，用于图片命名
 
-        # 处理图片上传（最多9张）
+        # 图片上传目录
         upload_folder = 'static/avatars/goodspictures'
         os.makedirs(upload_folder, exist_ok=True)
-        files = request.files.getlist('images')
-        if not files or len(files) == 0:
-            return jsonify(code=400, msg='请上传至少一张图片')
 
-        for i, file in enumerate(files[:9]):
-            if file and file.filename:
-                ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'jpg'
-                filename = f"{new_goods.goods_id}_{i}.{ext}"
-                filepath = os.path.join(upload_folder, filename)
-                file.save(filepath)
+        # 获取上传的图片文件
+        uploaded_files = request.files.getlist('images')
 
-                img = goods_image(
-                    goods_id=new_goods.goods_id,
-                    url=f"/static/avatars/goodspictures/{filename}",
-                    sort=i
-                )
-                db.session.add(img)
+        # 判断是否有有效图片上传（排除空文件）
+        has_uploaded_images = any(f.filename != '' for f in uploaded_files)
+
+        default_cover_url = '/static/avatars/goodspictures/default.jpg'
+
+        if has_uploaded_images:
+            # 用户上传了图片 → 保存最多9张
+            for i, file in enumerate(uploaded_files[:9]):
+                if file and file.filename:
+                    # 安全获取扩展名
+                    ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'jpg'
+                    filename = f"{new_goods.goods_id}_{i}.{ext}"
+                    filepath = os.path.join(upload_folder, filename)
+                    file.save(filepath)
+
+                    img_url = f"/static/avatars/goodspictures/{filename}"
+                    img = goods_image(
+                        goods_id=new_goods.goods_id,
+                        url=img_url,
+                        sort=i  # 第一张为封面
+                    )
+                    db.session.add(img)
+        else:
+            # 用户没有上传任何图片 → 自动添加默认封面图
+            default_img = goods_image(
+                goods_id=new_goods.goods_id,
+                url=default_cover_url,
+                sort=0
+            )
+            db.session.add(default_img)
 
         db.session.commit()
-        return jsonify(code=200, msg='发布成功！', goods_id=new_goods.goods_id)
+
+        return jsonify(
+            code=200,
+            msg='发布成功！',
+            goods_id=new_goods.goods_id
+        )
 
     except Exception as e:
         db.session.rollback()
-        print("【发布失败】", str(e))
-        return jsonify(code=500, msg='服务器错误：' + str(e))
+        print("【商品发布失败】", str(e))
+        return jsonify(code=500, msg='发布失败，请稍后重试')
+
 
 
 

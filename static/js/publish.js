@@ -36,7 +36,7 @@ function renderPreview() {
     div.className = 'preview-item';
     div.innerHTML = `
       <img src="${img.url}">
-      <div class="delete" onclick="images.splice(${i},1); renderPreview()">×</div>
+      <div class="delete" onclick="removeImage(${i})">×</div>
     `;
     div.draggable = true;
     div.ondragstart = e => e.dataTransfer.setData('index', i);
@@ -54,13 +54,14 @@ function renderPreview() {
 async function publishGoods() {
   const title = document.getElementById('title').value.trim();
   const price = document.getElementById('price').value;
-  // 修改这里：去掉 images.length === 0 的强制要求
-  if (!title || !price) return alert('请填写标题、价格并上传图片');
+  // 只校验必填项：标题和价格
+  if (!title) return alert('请填写商品标题');
+  if (!price || price <= 0) return alert('请填写正确的价格');
 
-  // 如果一张图片都没上传，给个友好提示，但不阻止发布
+  // 图片完全可选 → 如果没图就直接发布（后端会补默认图）
   if (images.length === 0) {
-    if (!confirm('您还没有上传商品图片，确定要发布吗？\n（无图商品吸引力会降低哦~）')) {
-      return;  // 用户取消，就不继续发布
+    if (!confirm('您没有上传任何图片，商品将使用默认封面图发布，确定要继续吗？')) {
+      return;
     }
   }
 
@@ -75,13 +76,18 @@ async function publishGoods() {
 
   const btn = document.querySelector('.btn-publish');
   btn.textContent = '发布中...';
-  btn.style.opacity = '0.7';
+  btn.onclick = null; ;
 
   try {
     const res = await fetch('/api/goods/publish', { method: 'POST', body: form });
     const d = await res.json();
     alert(d.msg);
-    if (d.code === 200) location.href = '/goods/' + d.goods_id;
+    if (d.code === 200) {
+      location.href = '/goods/' + d.goods_id;
+    } else {
+      btn.textContent = '发布商品';
+      btn.onclick = publishGoods;
+    }
   } catch (e) {
     alert('网络错误');
     btn.textContent = '发布商品';
