@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>发布商品 - 湖工大二手</title>
+  <title>{% if goods %}编辑商品{% else %}发布商品{% endif %} - 湖工大二手</title>
   <link rel="stylesheet" href="/static/css/style.css">
   <style>
+    /* 你的原有样式保持不变 */
     .header { position: fixed; top: 0; left: 0; right: 0; height: 60px; background: #ffce00; display: flex; align-items: center; padding: 0 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; }
     .logo h1 { font-size: 32px; color: #000; font-weight: bold; margin: 0; }
     .search-bar { flex: 1; margin: 0 15px; height: 40px; background: white; border-radius: 25px; display: flex; align-items: center; padding: 0 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
@@ -22,17 +23,15 @@
     input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 12px; font-size: 16px; }
     textarea { height: 120px; resize: vertical; }
 
-    /* 图片上传区 */
     #upload-area { border: 3px dashed #ddd; border-radius: 16px; padding: 40px; text-align: center; cursor: pointer; transition: all 0.3s; background: #fafafa; }
     #upload-area:hover { border-color: #ffce00; background: #fffbe6; }
     #upload-area.dragover { border-color: #ffce00; background: #fffbe6; }
     .preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; margin-top: 20px; }
     .preview-item { position: relative; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
     .preview-item img { width: 100%; height: 120px; object-fit: cover; }
-    .preview-item .delete { position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,0.6); color: white; width: 24px; height: 24px; border-radius: 50%; text-align: center; line-height: 24px; cursor: pointer; }
+    .preview-item .delete { position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,0.6); color: white; width: 24px; height: 24px; border-radius: 50%; text-align: center; line-height: 24px; cursor: pointer; font-size: 18px; }
 
     .btn-publish { background: #ffce00; color: #000; padding: 18px; text-align: center; border-radius: 16px; font-size: 20px; font-weight: bold; cursor: pointer; margin-top: 30px; }
-    .batch-mode { background: #ffe0b2; padding: 20px; border-radius: 16px; margin: 20px 0; text-align: center; font-weight: bold; color: #e65100; }
   </style>
 </head>
 <body>
@@ -46,30 +45,40 @@
     </div>
   </div>
 
-  <div class="main" style="padding-top:80px;">
+  <div class="main">
     <div class="card">
-      <h2 style="text-align:center;margin-bottom:30px;font-size:28px;">发布商品</h2>
-        <!-- 毕业生专属：一键开启清仓模式 -->
-                {% if user.is_graduating %}
-        <div style="background:#fff3cd;padding:20px;border-radius:16px;margin:20px 0;text-align:center;border:2px solid #ffce00;">
+      <h2 style="text-align:center;margin-bottom:30px;font-size:28px;">
+        {% if goods %}编辑商品{% else %}发布商品{% endif %}
+      </h2>
+
+      <!-- 隐藏的 goods_id，用于编辑时提交 -->
+      {% if goods %}
+      <input type="hidden" id="goods_id" value="{{ goods.goods_id }}">
+      {% endif %}
+
+      <!-- 毕业生清仓模式 -->
+      {% if user.is_graduating %}
+      <div style="background:#fff3cd;padding:20px;border-radius:16px;margin:20px 0;text-align:center;border:2px solid #ffce00;">
         <label style="font-size:18px;font-weight:bold;color:#d4380d;cursor:pointer;">
-            <input type="checkbox" id="batch-mode" name="is_batch" value="1" style="width:20px;height:20px;vertical-align:middle;margin-right:10px;">
-            一键开启【毕业生清仓模式】（自动置顶 + 打标 + 倒计时）
+          <input type="checkbox" id="batch-mode" name="is_batch" value="1" 
+                 style="width:20px;height:20px;vertical-align:middle;margin-right:10px;"
+                 {% if goods and goods.is_batch %}checked{% endif %}>
+          一键开启【毕业生清仓模式】（自动置顶 + 打标 + 倒计时）
         </label>
         <div style="font-size:14px;color:#666;margin-top:8px;">
-            勾选后商品将出现在“毕业生清仓专区”，优先推荐给全校同学
+          勾选后商品将出现在“毕业生清仓专区”，优先推荐给全校同学
         </div>
-        </div>
-        {% endif %}
+      </div>
+      {% endif %}
 
       <div class="form-row">
         <div class="form-group">
           <label>商品标题</label>
-          <input type="text" id="title" placeholder="例：高等数学同济第七版 几乎全新">
+          <input type="text" id="title" value="{{ goods.title if goods else '' }}" placeholder="例：高等数学同济第七版 几乎全新">
         </div>
         <div class="form-group">
           <label>价格（元）</label>
-          <input type="number" id="price" step="0.01" placeholder="15.00">
+          <input type="number" id="price" value="{{ goods.price if goods else '' }}" step="0.01" placeholder="15.00">
         </div>
       </div>
 
@@ -78,26 +87,28 @@
           <label>分类</label>
           <select id="cate_id">
             {% for cat in categories %}
-            <option value="{{ cat.cate_id }}">{{ cat.name }}</option>
+            <option value="{{ cat.cate_id }}" {% if goods and goods.cate_id == cat.cate_id %}selected{% endif %}>
+              {{ cat.name }}
+            </option>
             {% endfor %}
           </select>
         </div>
         <div class="form-group">
           <label>新旧程度</label>
           <select id="degree">
-            <option value="10">10成新（全新）</option>
-            <option value="9">9成新</option>
-            <option value="8">8成新</option>
-            <option value="7">7成新</option>
-            <option value="6">6成新</option>
-            <option value="5">5成新及以下</option>
+            <option value="10" {% if goods and goods.degree == 10 %}selected{% endif %}>10成新（全新）</option>
+            <option value="9" {% if goods and goods.degree == 9 %}selected{% endif %}>9成新</option>
+            <option value="8" {% if goods and goods.degree == 8 %}selected{% endif %}>8成新</option>
+            <option value="7" {% if goods and goods.degree == 7 %}selected{% endif %}>7成新</option>
+            <option value="6" {% if goods and goods.degree == 6 %}selected{% endif %}>6成新</option>
+            <option value="5" {% if goods and goods.degree <= 5 %}selected{% endif %}>5成新及以下</option>
           </select>
         </div>
       </div>
 
       <div class="form-group">
         <label>商品描述（可不填）</label>
-        <textarea id="description" placeholder="写下商品细节、使用情况、交易方式等，越详细越好哦~"></textarea>
+        <textarea id="description" placeholder="写下商品细节、使用情况、交易方式等，越详细越好哦~">{{ goods.description if goods else '' }}</textarea>
       </div>
 
       <div class="form-group">
@@ -106,13 +117,37 @@
           <p>点击或拖拽图片到这里（最多9张）</p>
           <input type="file" id="file-input" accept="image/*" multiple style="display:none">
         </div>
-        <div id="preview-grid" class="preview-grid"></div>
+
+        <!-- 显示已有图片（编辑模式） -->
+        <div id="preview-grid" class="preview-grid">
+          {% if existing_images %}
+            {% for img in existing_images %}
+            <div class="preview-item" data-url="{{ img.url }}">
+              <img src="{{ img.url }}">
+              <div class="delete" onclick="removePreviewItem(this)">×</div>
+            </div>
+            {% endfor %}
+          {% endif %}
+        </div>
       </div>
 
-      <div class="btn-publish" onclick="publishGoods()">发布商品</div>
+      <!-- 按钮文字动态变化 -->
+      <div class="btn-publish" onclick="saveGoods()">
+        {% if goods %}保存修改{% else %}发布商品{% endif %}
+      </div>
     </div>
   </div>
 
   <script src="/static/js/publish.js"></script>
+
+  <!-- 页面加载后自动选中新旧程度（兼容性补丁，万一上面没选中） -->
+  {% if goods %}
+  <script>
+    document.getElementById('degree').value = {{ goods.degree }};
+    {% if goods.is_batch %}
+    document.getElementById('batch-mode').checked = true;
+    {% endif %}
+  </script>
+  {% endif %}
 </body>
 </html>

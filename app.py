@@ -619,11 +619,33 @@ def interact(action):
 @app.route('/publish')
 @login_required
 def publish_page():
-    """发布商品页面"""
-    categories = db.session.execute(db.text("SELECT cate_id, name FROM category WHERE enabled=1")).fetchall()
+    """发布/编辑商品页面（复用同一个页面）"""
+    edit_id = request.args.get('edit', type=int)  # 获取 ?edit=xxx 参数
+    categories = Category.query.filter_by(enabled=1).all()
     user = User.query.get(session['user_id'])
-    return render_template('visiter/goods_publish.html', user=user, categories=categories)
-
+    
+    goods_data = None
+    existing_images = []
+    if edit_id:
+        g = goods.query.filter_by(goods_id=edit_id, user_id=session['user_id']).first_or_404()
+        goods_data = {
+            'goods_id': g.goods_id,
+            'title': g.title,
+            'price': float(g.price),
+            'cate_id': g.cate_id,
+            'degree': g.degree,
+            'description': g.description or '',
+            'is_batch': g.is_batch
+        }
+        # 获取已有图片，按 sort 排序
+        existing_images = goods_image.query.filter_by(goods_id=edit_id).order_by(goods_image.sort).all()
+        existing_images = [{'url': img.url, 'sort': img.sort} for img in existing_images]
+    
+    return render_template('visiter/goods_publish.html', 
+                           user=user, 
+                           categories=categories,
+                           goods=goods_data,          # 编辑时传入商品数据
+                           existing_images=existing_images)  # 编辑时传入已有图片
 
 @app.route('/api/goods/publish', methods=['POST'])
 @login_required
@@ -720,7 +742,57 @@ def api_publish_goods():
         print("【商品发布失败】", str(e))
         return jsonify(code=500, msg='发布失败，请稍后重试')
 
-
+@app.route('/api/goods/update', methods=['POST'])
+@login_required
+def api_update_goods():
+    """编辑商品保存接口"""
+    try:
+        goods_id = request.form.get('goods_id', type=int)
+        if not goods_id:
+            return jsonify(code=400, msg='缺少商品ID')
+        
+        g = goods.query.filter_by(goods_id=goods_id, user_id=session['user_id']).first_or_404()
+        
+        # 更新基本字段（同发布逻辑）
+        g.title = request.form.get('title', '').strip()
+        g.price = float(request.form.get('price'))
+        g.cate_id = int(request.form.get('cate_id'))
+        g.degree = int(request.form.get('degree', 10))
+        g.description = request.form.get('description', '').strip()
+        g.is_batch = 1 if request.form.get('is_batch') == '1' else 0
+        
+        # 处理图片：先删除旧图片记录（可选：也可以只删用户删除的）
+        db.session.execute(db.text("DELETE FROM goods_image WHERE goods_id = :gid"), {'gid': goods_id})
+        
+        upload_folder = 'static/avatars/goodspictures'
+        os.makedirs(upload_folder, exist_ok=True)
+        
+        uploaded_files = request.files.getlist('images')
+        has_uploaded = any(f.filename != '' for f in uploaded_files)
+        
+        if has_uploaded:
+            for i, file in enumerate(uploaded_files[:9]):
+                if file and file.filename:
+                    ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'jpg'
+                    filename = f"{goods_id}_{i}.{ext}"
+                    filepath = os.path.join(upload_folder, filename)
+                    file.save(filepath)
+                    
+                    img_url = f"/static/avatars/goodspictures/{filename}"
+                    img = goods_image(goods_id=goods_id, url=img_url, sort=i)
+                    db.session.add(img)
+        else:
+            # 没传新图，用默认封面
+            default_img = goods_image(goods_id=goods_id, url='/static/avatars/goodspictures/default.jpg', sort=0)
+            db.session.add(default_img)
+        
+        db.session.commit()
+        return jsonify(code=200, msg='修改成功！', goods_id=goods_id)
+    
+    except Exception as e:
+        db.session.rollback()
+        print("【商品编辑失败】", str(e))
+        return jsonify(code=500, msg='修改失败')
 
 
 
